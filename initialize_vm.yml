@@ -1,0 +1,7 @@
+- hosts: localhost
+  vars_files:
+    - [ "deployment_vars/shell_global.yml" ]
+  become: true
+  become_method: sudo
+  roles:
+    - deploy-setup
