@@ -1,4 +1,4 @@
-# Welcome to Global Mobility's Ansible Project
+# Welcome to Ansible Project
 
 We are on the road to infrastructure automation! This is still a work in progress.
 
