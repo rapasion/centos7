@@ -2,11 +2,6 @@
 
 We are on the road to infrastructure automation! This is still a work in progress.
 
-We now have working scripts for:
-
-[JHS HCloud Migration](roles/code-deployment/README.md)
-
-[CQM Deployment](roles/deploy_cqm_web/README.md)
 
 ### NOTE: Ansible is using 'rsync'. This need to install via 'yum'.
 yum install rsync -y
@@ -265,65 +260,4 @@ to change any of the variables, add the intended change as an extra var.
 
 The `php_install_from_source` option generates "`ansible/downloads/export_gml_source_php-7.4.9.tar.gz`" file which can be used for other installations.
 
-
-### Step 8. Initial HMS Deployment
-The hms_deploy is used to deploy and setup the environment needed for the specified hospital.
-It takes in environment variables such as hospital (jmc, jch), deployment environment (dev, sit)
-
-    make deploy_hms_jmcdev
-
-    or
-	
-    python ansible-playbook -v hms_deploy.yml --extra-vars="@deployment_vars/jhs.yml" --extra-vars="@deployment_vars/jmc/jmc_dev.yml" --extra-vars="code_deploy=true code_user=hmsops"
-
-The hms-deploy role is used for the initial hms deployment. It performs the following actions.
-1) Runs the Code Deployment task which calls the code-deploy Role to deploy Application Code
-2) Creates a Virtual host file for the environment being deployed
-3) Include Virtualhosts in apache config
-4) Deploys SSL Certificates
-5) Deploys Log browser
-6) Opens up firewall for HMS application ports
-7) Deploys php-Info page
-<br>
-<br>  
-
-Variables are grouped into the deployment_vars directory.
-- `jhs.yml` contains variables that overlap in the hospital environment 
-- `jmc/{dev,sit}.yml` contains environment specific variables e.g. dev environment, sit environment for jmc
-- `defaults/main.yml` default playbook directories
-
-Notable variables that can change: 
-
-    httpd_version_number: "2.4.46"
-    php_version_number: "7.4.21"
-
-Note: The Code-deployment task uses the code-deployment role variables which will be explained in the next step
-At the end of the role, The following should be in place
-1) Login on the Deployed HMS WebSite
-2) Log Browsing Page found on port 8080/jhs-logs
-3) A phpinfo.php page in root folder
-<br>
-<br> 
-
-### Step 9. Code Deployment
-The code deployment tasks is used to deploy hms code to existing environment. This can be used to download code from git, deploy code types and rollback to a code_version.
-The 3 main variables for the role are
-
-- git_dl: Downloads Code from Git and compresses it to a folder that can be used by the deploy task or transferrred to another server for deployment
-- code_deploy: Deploys Application code from a source folder. It requires that compress code file is present on the server before deployment. Defaults to true
-- rollback: Used to rollback to previous deployment
-The variables should be set to true to activate it
-
-    make code_deploy_jmcdev
-    
-    or
-
-	python ansible-playbook -v code_deploy.yml --extra-vars="@deployment_vars/jhs.yml" --extra-vars="@deployment_vars/jmc/jmc_dev.yml" --extra-vars="code_deploy=true code_user=hmsops"
-
-Other Noteable Variables
-
-- git_repo: repo url to download codes
-- code_source: Location of Download compressed code for deployment
-- code_type: List containing Type of code to be deployed. E.g ['hms_htdocs','onramp_web','config','libraries']
-- code_version: Git_tag/ or branch to be deployed
 
