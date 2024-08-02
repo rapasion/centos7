@@ -1,0 +1,130 @@
+- name: Create Limits file
+  copy:
+    dest: /etc/security/limits.d/30-nofile.conf
+    content: |
+        *   soft    nofile      16000
+        *   hard    nofile      30000
+
+- name: Create GML Tuned Directory
+  file:
+    state: directory
+    path: "{{ item }}"
+  loop:
+    - /etc/tuned/gml_tune
+    - /etc/ld.config.d
+
+- name: Create Tuned Config
+  copy:
+    dest: /etc/tuned/gml_tune/tuned.conf
+    content: |
+        [main]
+        include=throughput-performance
+
+        [sysctl]
+        vm.swappiness = 1
+        vm.overcommit_ratio = 75
+        vm.overcommit_memory = 2
+        vm.dirty_background_ratio = 5
+        vm.dirty_ratio = 10
+        
+        # Uncomment the following to enable huge pages for Postgresql. Only for DB VM’s
+        # Value is based on the JHS DB 32G size. Accomodates shared_buffers up to 10G only
+        # If shared_buffers needs to be more, then the value needs to be increased. Running the postgrestuner.pl will give the approx value.
+        #vm.nr_hugepages = 4880
+        
+        # Uncomment the following to enable huge pages for Postgresql. Only for HL7 DB VM’s
+        # Value is based on the KTPH HL7 DB 10G RAM size. Running the postgrestuner.pl will give the approx value.
+        #vm.nr_hugepages = 1450
+
+        #[vm]
+        #transparent_hugepages=never
+
+- name: Create Tuned Config (DB)
+  copy:
+    dest: /etc/tuned/gml_tune/tuned.conf
+    content: |
+        [main]
+        include=throughput-performance
+
+        [sysctl]
+        vm.swappiness = 1
+        vm.overcommit_ratio = 75
+        vm.overcommit_memory = 2
+        vm.dirty_background_ratio = 5
+        vm.dirty_ratio = 10
+
+        # Uncomment the following to enable huge pages for Postgresql. Only for DB VM’s
+        # Value is based on the JHS DB 32G size. Accomodates shared_buffers up to 10G only
+        # If shared_buffers needs to be more, then the value needs to be increased. Running the postgrestuner.pl will give the approx value.
+        vm.nr_hugepages = 4880
+
+        # Uncomment the following to enable huge pages for Postgresql. Only for HL7 DB VM’s
+        # Value is based on the KTPH HL7 DB 10G RAM size. Running the postgrestuner.pl will give the approx value.
+        # vm.nr_hugepages = 1450
+
+        [vm]
+        transparent_hugepages=never
+
+  when:
+    - server is defined and server == 'db'
+
+- name: Create Tuned Config (HL7 DB)
+  copy:
+    dest: /etc/tuned/gml_tune/tuned.conf
+    content: |
+        [main]
+        include=throughput-performance
+
+        [sysctl]
+        vm.swappiness = 1
+        vm.overcommit_ratio = 75
+        vm.overcommit_memory = 2
+        vm.dirty_background_ratio = 5
+        vm.dirty_ratio = 10
+
+        # Uncomment the following to enable huge pages for Postgresql. Only for DB VM’s
+        # Value is based on the JHS DB 32G size. Accomodates shared_buffers up to 10G only
+        # If shared_buffers needs to be more, then the value needs to be increased. Running the postgrestuner.pl will give the approx value.
+        #vm.nr_hugepages = 4880
+
+        # Uncomment the following to enable huge pages for Postgresql. Only for HL7 DB VM’s
+        # Value is based on the KTPH HL7 DB 10G RAM size. Running the postgrestuner.pl will give the approx value.
+        # vm.nr_hugepages = 1450
+
+        [vm]
+        transparent_hugepages=never
+
+  when:
+    - server is defined and server == 'db'
+    - hl7 is defined and hl7 == 'true'
+
+- name: Ensure GML Tune config is enabled
+  shell: sh -c "sudo tuned-adm profile gml_tune"
+
+- name: Create Library Config
+  copy:
+    dest: /etc/ld.so.conf.d/gml_source.conf
+    content: |
+        /export/home/gml_source/lib
+
+- name: Ensure current mode of SELinux is set to enforce.
+  shell: sh -c "sudo setenforce 1"
+  tags:
+    - apache-selinux
+
+- name: Check if SELinux config is set to 'enforcing' mode.
+  shell: sh -c 'sudo cat /etc/selinux/config | grep -oE "SELINUX=enforcing"'
+  register: selinux_enforcing
+  failed_when: false
+  tags:
+    - apache-selinux
+
+- name: Ensure SELinux mode config is set into 'enforcing' permanently.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo vi /etc/selinux/config -c ':%s/SELINUX=permissive/SELINUX=enforcing' -c ':wq'"
+    - "sudo vi /etc/selinux/config -c ':%s/SELINUX=disabled/SELINUX=enforcing' -c ':wq'"
+  when: 
+    - selinux_enforcing.rc == 1
+  tags:
+    - apache-selinux

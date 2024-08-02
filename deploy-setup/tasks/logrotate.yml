@@ -1,0 +1,136 @@
+---
+
+- name: Check startup folder exists.
+  stat:
+    path: "{{ gml_source_path }}/startup"
+  register: register_startup_folder
+
+- name: Check {{ shared_drive }} if exists.
+  stat:
+    path: "{{ shared_drive }}"
+  register: register_shared_drive
+
+- name: Check {{ shared_drive_log_backup_dir }} if exists
+  stat:
+    path: "{{ shared_drive_log_backup_dir }}"
+  register: register_shared_drive_log_backup_dir
+
+- name: Check Timer Configuration Dir Exists
+  stat:
+    path: "{{ gml_logrotate_path }}"
+  register: register_gml_logrotate_path
+
+- name: Check Script Location Dir Exists
+  stat:
+    path: "{{ script_location }}"
+  register: register_script_location
+
+- name: Check symlink for systemd logrotate Service
+  stat:
+    path: /etc/systemd/system/multi-user.target.wants/logrotate.service
+  register: register_systemd_logrotate_service
+
+- name: Check symlink for systemd logrotate Timer
+  stat:
+    path: /etc/systemd/system/multi-user.target.wants/logrotate.timer
+  register: register_systemd_logrotate_timer
+
+- name: Create startup folder.
+  file:
+    path: "{{ gml_source_path }}/startup"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_startup_folder.stat.exists
+
+- name: Create {{ shared_drive }} folder
+  file:
+    path: "{{ shared_drive }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_shared_drive.stat.exists 
+
+- name: Create {{ shared_drive_log_backup_dir }} folder
+  file:
+    path: "{{ shared_drive_log_backup_dir }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_shared_drive_log_backup_dir.stat.exists 
+
+- name: Ensure Timer Configuration Dir Exists
+  file:
+    path: "{{ gml_logrotate_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_gml_logrotate_path.stat.exists
+
+- name: Ensure Script Location Dir Exists
+  file:
+    path: "{{ script_location }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_script_location.stat.exists
+
+- name: Check {{ gml_logrotate_log_path }} folder exists.
+  stat:
+    path: "{{ gml_logrotate_log_path }}"
+  register: register_logrotate_folder
+
+- name: Ensure {{ gml_logrotate_log_path }} Folder Exists
+  file:
+    path: "{{ gml_logrotate_log_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_logrotate_folder.stat.exists
+
+- name: Export logrotate Service.
+  template:
+    src: "{{ playbook_dir }}/roles/timers/templates/service/logrotate.service.j2"
+    dest: "{{ gml_source_path }}/startup/logrotate.service.j2"
+
+- name: Copy logrotate Service to systemd
+  command: 'sudo cp -f {{ gml_source_path }}/startup/logrotate.service.j2 /usr/lib/systemd/system/logrotate.service'
+
+- name: Create link from systemd - logrotate Service
+  command: "{{ item }}"
+  with_items:
+    - 'sudo ln -s /usr/lib/systemd/system/logrotate.service /etc/systemd/system/multi-user.target.wants/logrotate.service'
+    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/logrotate.service'
+    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/logrotate.service'
+  when: not register_systemd_logrotate_service.stat.exists
+
+- name: Export logrotate Timer.
+  template:
+    src: "{{ playbook_dir }}/roles/timers/templates/timer/logrotate.timer.j2"
+    dest: "{{ gml_source_path }}/startup/logrotate.timer.j2"
+
+- name: Copy logrotate Timer to systemd
+  command: 'sudo cp -f {{ gml_source_path }}/startup/logrotate.timer.j2 /usr/lib/systemd/system/logrotate.timer'
+
+- name: Create link from systemd - logrotate Timer
+  command: "{{ item }}"
+  with_items:
+    - 'sudo ln -s /usr/lib/systemd/system/logrotate.timer /etc/systemd/system/multi-user.target.wants/logrotate.timer'
+    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/logrotate.timer'
+    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/logrotate.timer'
+  when: not register_systemd_logrotate_timer.stat.exists
+
+- name: Reload systemd
+  command: "{{ sh_systemctl }} daemon-reload"
+
+- name: Enable logrotate Service
+  shell: sh -c "{{ sh_logrotate_enable }}"
+
+- name: Start logrotate Timer
+  shell: sh -c "{{ sh_logrotate_tmr_start }}"

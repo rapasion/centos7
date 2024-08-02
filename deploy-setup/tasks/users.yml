@@ -1,0 +1,135 @@
+---
+- name: Ensure {{ code_user }} group exists
+  group:
+    name: "{{ code_user }}"
+    state: present
+
+- name: Ensure {{ code_user }} belongs to correct primary group
+  ansible.builtin.user:
+    name: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: Check {{ code_user }} homedir
+  user:
+    name: "{{ code_user }}"
+    state: present
+  register: code_user_var
+
+- name: Change {{ code_user }} homedir
+  replace:
+    path: /etc/passwd
+    regexp: '\/home\/gmlops1:\/bin\/bash$'
+    replace: "/export/home/{{ code_user }}:/bin/bash"
+  when:
+    - code_user_var.home != '/export/home/{{ code_user }}'
+
+#- name: Source .bashrc for login shells in bash_profile
+#  template:
+#    src: bash_profile.j2
+#    dest: "/export/home/{{ code_user }}/.bash_profile"
+
+
+- name: Ensure /export/home DIR set correct permission
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chown -R {{ code_user }}:{{ code_user }} /export/home"
+    - "sudo chmod 750 /export/home"
+
+- name: Ensure Binary Path Exists
+  file:
+    path: "{{ gml_source_path }}/bin/"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+
+- name: Change home directory and group of hmsdba 
+  user:
+    name: hmsdba
+    home: "/ypool"
+    group:  "{{ code_user }}"
+  when:
+    - server is defined and server == 'db'
+
+- name: Bash Profile Block
+  block:
+  - name: Source .bashrc for login shells in bash_profile (DB)
+    template: 
+      src: bash_profile.j2
+      dest: "/ypool/.bash_profile"
+    when: server is defined and server == 'db'
+
+  - name: Ensure correct permission on bash_profile (DB)
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} /ypool/.bash_profile'
+      - 'sudo chmod 400 /ypool/.bash_profile'
+    when: server is defined and server == 'db'
+
+  - name: Source .bashrc for login shells in bash_profile
+    template: 
+      src: bash_profile.j2
+      dest: "/export/home/{{ code_user }}/.bash_profile"
+
+  - name: Ensure correct permission on bash_profile.
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ code_user }}:{{ code_user }} /export/home/{{ code_user }}/.bash_profile'
+      - 'sudo chmod 400 /export/home/{{ code_user }}/.bash_profile'
+  tags:
+    - bash_profile
+
+- name: add UAT pamunixread and pamunixadm users to {{ code_user }} group
+  become: yes
+  become_user: root
+  become_method: sudo
+  user:
+    name: '{{ item }}'
+    groups: '{{ code_user }}'
+    append: yes
+  with_items:
+    - "pamunixread51"
+    - "pamunixread52"
+    - "pamunixread53"
+    - "pamunixread54"
+    - "pamunixread55"
+    - "pamunixadm51"
+    - "pamunixadm52"
+    - "pamunixadm53"
+    - "pamunixadm54"
+    - "pamunixadm55"
+  when:
+    - env is defined and env == 'uat'
+    - hospital == 'ktph' or cluster == 'ktph'
+
+- name: add UAT pamunixread and pamunixadm users to {{ code_user }} group (JHS)
+  become: yes
+  become_user: root
+  become_method: sudo
+  user:
+    name: '{{ item }}'
+    groups: '{{ code_user }}'
+    append: yes
+  with_items:
+    - "pamunixread51"
+    - "pamunixread52"
+    - "pamunixadm51"
+    - "pamunixadm52"
+  when:
+    - env is defined and env == 'uat'
+
+- name: add PRD pamunixread and pamunixadm users to {{ code_user }} group
+  become: yes
+  become_user: root
+  become_method: sudo
+  user:
+    name: '{{ item }}'
+    groups: '{{ code_user }}'
+    append: yes
+  with_items:
+    - "pamunixread1"
+    - "pamunixread2"
+    - "pamunixadm1"
+    - "pamunixadm2"
+  when:
+    - env is defined and env == 'prod'
