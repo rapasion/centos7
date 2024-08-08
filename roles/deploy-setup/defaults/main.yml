@@ -1,0 +1,14 @@
+---
+code_user: hmsops
+password: "56D55B6F0FA9D9630F4BA87109DC44F9390D454B5629F30106E6702EB8D5F1D1FFAD21FEAEB813657E3AB9CCB30F85F00DB8C95EB0B8CBE0957A8DF193D578C0"
+pam_group: "pamappadm"
+enable_sudo: true
+download_online_dependencies: true
+gml_source_path: "/export/home/gml_source"
+gml_logrotate_path: "{{ gml_source_path }}/logrotate"
+script_location: "{{ gml_source_path }}/scripts/"
+shared_archive: /export/home/shared_archive
+shared_archive_log_backup_dir: "{{ shared_archive }}/log_backup"
+shared_drive: /export/home/shared_drive
+shared_drive_log_backup_dir: "{{ shared_drive }}/log_backup"
+gml_logrotate_log_path: "{{ gml_source_path }}/logs/logrotate"
