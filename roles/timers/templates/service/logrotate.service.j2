@@ -1,0 +1,9 @@
+[Unit]
+Description=Run logrotate for gml_logrotate
+Wants=logrotate.timer
+
+[Service]
+ExecStart=/usr/bin/sh -c '/usr/sbin/logrotate -vf -s {{ script_location }}logrotate.status {{ gml_logrotate_path }} > {{ gml_logrotate_log_path }}/logrotate.log 2>&1'
+
+[Install]
+WantedBy=multi-user.target
