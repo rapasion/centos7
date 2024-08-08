@@ -1,0 +1,20 @@
+---
+- include_tasks: users.yml
+  tags:
+    - users
+
+- include_tasks: hardening.yml
+  tags:
+    - hardening
+
+- import_tasks: logrotate_jhs.yml
+  when:
+    - cluster == 'jhs'
+  tags:
+    - logrotate_services_timer
+
+- import_tasks: logrotate.yml
+  when:
+    - cluster != 'jhs'
+  tags:
+    - logrotate_services_timer
