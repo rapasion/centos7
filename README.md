@@ -83,7 +83,7 @@ The initialize Playbook is the first playbook that is run. The initial_vm.yml pl
 
     ```bash
     make initialize
-
+    python ansible-playbook -v initialize_vm.yml --extra-vars "enable_sudo=true download_online_dependencies=true code_user="hmsops" env="dev" hospital="ttsh" cluster="ttsh""
         or
 
     python ansible-playbook initialize_vm.yml --extra-vars "enable_sudo=true download_online_dependencies=true code_user=hmsops"

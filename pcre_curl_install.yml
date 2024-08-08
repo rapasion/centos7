@@ -1,0 +1,6 @@
+- hosts: localhost
+  become: yes
+  become_user: "{{ code_user }}" ### Need to comment this line if installing on a new server
+  become_method: sudo
+  roles:
+    - ansible-source-prelim

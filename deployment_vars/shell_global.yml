@@ -1,0 +1,245 @@
+# Service Command
+sh_systemctl: "sudo systemctl"
+
+# HTTPD SUDO Commands
+sh_httpd_svc: "httpd"
+sh_httpd_stop: "{{ sh_systemctl }} stop {{ sh_httpd_svc }}"
+sh_httpd_start: "{{ sh_systemctl }} start {{ sh_httpd_svc }}"
+sh_httpd_restart: "{{ sh_systemctl }} restart {{ sh_httpd_svc }}"
+sh_httpd_enable: "{{ sh_systemctl }} enable {{ sh_httpd_svc }}"
+sh_httpd_disable: "{{ sh_systemctl }} disable {{ sh_httpd_svc }}"
+
+# MySQL SUDO Commands
+sh_mysql_svc: "mysql8"
+sh_mysql_stop: "{{ sh_systemctl }} stop {{ sh_mysql_svc }}"
+sh_mysql_start: "{{ sh_systemctl }} start {{ sh_mysql_svc }}"
+sh_mysql_restart: "{{ sh_systemctl }} restart {{ sh_mysql_svc }}"
+sh_mysql_enable: "{{ sh_systemctl }} enable {{ sh_mysql_svc }}"
+sh_mysql_disable: "{{ sh_systemctl }} disable {{ sh_mysql_svc }}"
+
+# PHP-FPM SUDO Commands
+sh_fpm_svc: "php-fpm"
+sh_fpm_stop: "{{ sh_systemctl }} stop {{ sh_fpm_svc }}"
+sh_fpm_start: "{{ sh_systemctl }} start {{ sh_fpm_svc }}"
+sh_fpm_reload: "{{ sh_systemctl }} reload {{ sh_fpm_svc }}"
+sh_fpm_restart: "{{ sh_systemctl }} restart {{ sh_fpm_svc }}"
+sh_fpm_enable: "{{ sh_systemctl }} enable {{ sh_fpm_svc }}"
+sh_fpm_disable: "{{ sh_systemctl }} disable {{ sh_fpm_svc }}"
+
+# PGBouncer SUDO Commands
+sh_pgbouncer_svc: "pgbouncer"
+sh_pgbouncer_stop: "{{ sh_systemctl }} stop {{ sh_pgbouncer_svc }}"
+sh_pgbouncer_start: "{{ sh_systemctl }} start {{ sh_pgbouncer_svc }}"
+sh_pgbouncer_restart: "{{ sh_systemctl }} restart {{ sh_pgbouncer_svc }}"
+sh_pgbouncer_enable: "{{ sh_systemctl }} enable {{ sh_pgbouncer_svc }}"
+sh_pgbouncer_disable: "{{ sh_systemctl }} disable {{ sh_pgbouncer_svc }}"
+
+# PostgreSQL SUDO Commands
+sh_pgsql_svc: "postgresql12"
+sh_pgsql_stop: "{{ sh_systemctl }} stop {{ sh_pgsql_svc }}"
+sh_pgsql_start: "{{ sh_systemctl }} start {{ sh_pgsql_svc }}"
+sh_pgsql_reload: "{{ sh_systemctl }} reload {{ sh_pgsql_svc }}"
+sh_pgsql_restart: "{{ sh_systemctl }} restart {{ sh_pgsql_svc }}"
+sh_pgsql_enable: "{{ sh_systemctl }} enable {{ sh_pgsql_svc }}"
+sh_pgsql_disable: "{{ sh_systemctl }} disable {{ sh_pgsql_svc }}"
+
+# Mirth Connect SUDO Commands
+sh_mirth_svc: "mirth"
+sh_mirth_stop: "{{ sh_systemctl }} stop {{ sh_mirth_svc }}"
+sh_mirth_start: "{{ sh_systemctl }} start {{ sh_mirth_svc }}"
+sh_mirth_restart: "{{ sh_systemctl }} restart {{ sh_mirth_svc }}"
+sh_mirth_enable: "{{ sh_systemctl }} enable {{ sh_mirth_svc }}"
+sh_mirth_disable: "{{ sh_systemctl }} disable {{ sh_mirth_svc }}"
+
+# Memcached SUDO Commands
+sh_memcached_svc: "memcached"
+sh_memcached_stop: "{{ sh_systemctl }} stop {{ sh_memcached_svc }}"
+sh_memcached_start: "{{ sh_systemctl }} start {{ sh_memcached_svc }}"
+sh_memcached_restart: "{{ sh_systemctl }} restart {{ sh_memcached_svc }}"
+sh_memcached_enable: "{{ sh_systemctl }} enable {{ sh_memcached_svc }}"
+sh_memcached_disable: "{{ sh_systemctl }} disable {{ sh_memcached_svc }}"
+
+# Daemon reload
+sh_daemon_reload: "{{ sh_systemctl }} daemon-reload"
+
+#PM2 Sudo Command
+sh_pm2_svc: "pm2-gmlops1"
+sh_pm2_start: "{{ sh_systemctl }} start {{ sh_pm2_svc }}"
+
+# Apache Version
+httpd_version: "2.4.59"
+
+# PHP Version
+php81_version: "8.2.6"
+php82_version: "8.1.6"
+php8_version: "8.0.17"
+php7_version: "7.4.27"
+
+## DB Ports ##
+pgsql_port: 6433
+hl7_pgsql_port: 3360
+
+# HMS DB Backup Service SUDO Commands
+sh_db_backup_svc: "db_backup_{{ hospital }}.service"
+sh_db_backup_svc_enable: "{{ sh_systemctl }} enable {{ sh_db_backup_svc }}"
+sh_db_backup_svc_disable: "{{ sh_systemctl }} disable {{ sh_db_backup_svc }}"
+
+# HMS DB Backup Timer SUDO Commands
+sh_db_backup_tmr: "db_backup_{{ hospital }}.timer"
+sh_db_backup_tmr_stop: "{{ sh_systemctl }} stop {{ sh_db_backup_tmr }}"
+sh_db_backup_tmr_start: "{{ sh_systemctl }} start {{ sh_db_backup_tmr }}"
+sh_db_backup_tmr_restart: "{{ sh_systemctl }} restart {{ sh_db_backup_tmr }}"
+
+# HL7 DB Backup Service SUDO Commands
+sh_hl7_db_backup_svc: "hl7_db_backup.service"
+sh_hl7_db_backup_svc_enable: "{{ sh_systemctl }} enable {{ sh_hl7_db_backup_svc }}"
+sh_hl7_db_backup_svc_disable: "{{ sh_systemctl }} disable {{ sh_hl7_db_backup_svc }}"
+
+# HL7 DB Backup Timer SUDO Commands
+sh_hl7_db_backup_tmr: "hl7_db_backup.timer"
+sh_hl7_db_backup_tmr_stop: "{{ sh_systemctl }} stop {{ sh_hl7_db_backup_tmr }}"
+sh_hl7_db_backup_tmr_start: "{{ sh_systemctl }} start {{ sh_hl7_db_backup_tmr }}"
+sh_hl7_db_backup_tmr_restart: "{{ sh_systemctl }} restart {{ sh_hl7_db_backup_tmr }}"
+
+# Full DB Backup Service SUDO Commands
+sh_db_backup_full_svc: "db_backup_full_{{ hospital }}.service"
+sh_db_backup_full_svc_enable: "{{ sh_systemctl }} enable {{ sh_db_backup_full_svc }}"
+sh_db_backup_full_svc_disable: "{{ sh_systemctl }} disable {{ sh_db_backup_full_svc }}"
+
+# Full DB Backup Timer SUDO Commands
+sh_db_backup_full_tmr: "db_backup_full_{{ hospital }}.timer"
+sh_db_backup_full_tmr_stop: "{{ sh_systemctl }} stop {{ sh_db_backup_full_tmr }}"
+sh_db_backup_full_tmr_start: "{{ sh_systemctl }} start {{ sh_db_backup_full_tmr }}"
+sh_db_backup_full_tmr_restart: "{{ sh_systemctl }} restart {{ sh_db_backup_full_tmr }}"
+
+# Diff DB Backup Service SUDO Commands
+sh_db_backup_diff_svc: "db_backup_diff_{{ hospital }}.service"
+sh_db_backup_diff_svc_enable: "{{ sh_systemctl }} enable {{ sh_db_backup_diff_svc }}"
+sh_db_backup_diff_svc_disable: "{{ sh_systemctl }} disable {{ sh_db_backup_diff_svc }}"
+
+# Diff DB Backup Timer SUDO Commands
+sh_db_backup_diff_tmr: "db_backup_diff_{{ hospital }}.timer"
+sh_db_backup_diff_tmr_stop: "{{ sh_systemctl }} stop {{ sh_db_backup_diff_tmr }}"
+sh_db_backup_diff_tmr_start: "{{ sh_systemctl }} start {{ sh_db_backup_diff_tmr }}"
+sh_db_backup_diff_tmr_restart: "{{ sh_systemctl }} restart {{ sh_db_backup_diff_tmr }}"
+
+# DB Dump Backup Transfer Service SUDO Commands
+sh_db_move_dump_svc: "db_move_dump_{{ hospital }}.service"
+sh_db_move_dump_svc_enable: "{{ sh_systemctl }} enable {{ sh_db_move_dump_svc }}"
+sh_db_move_dump_svc_disable: "{{ sh_systemctl }} disable {{ sh_db_move_dump_svc }}"
+
+# DB Dump Backup Transfer Timer SUDO Commands
+sh_db_move_dump_tmr: "db_move_dump_{{ hospital }}.timer"
+sh_db_move_dump_tmr_enable: "{{ sh_systemctl }} enable {{ sh_db_move_dump_tmr }}"
+sh_db_move_dump_tmr_disable: "{{ sh_systemctl }} disable {{ sh_db_move_dump_tmr }}"
+sh_db_move_dump_tmr_start: "{{ sh_systemctl }} start {{ sh_db_move_dump_tmr }}"
+sh_db_move_dump_tmr_restart: "{{ sh_systemctl }} restart {{ sh_db_move_dump_tmr }}"
+
+# DB Dump Backup Restore Service SUDO Commands
+sh_db_restore_svc: "db_backup_restore_{{ hospital }}.service"
+sh_db_restore_svc_enable: "{{ sh_systemctl }} enable {{ sh_db_restore_svc }}"
+sh_db_restore_svc_disable: "{{ sh_systemctl }} disable {{ sh_db_restore_svc }}"
+
+# DB Dump Backup Restore Timer SUDO Commands
+sh_db_restore_tmr: "db_backup_restore_{{ hospital }}.timer"
+sh_db_restore_tmr_enable: "{{ sh_systemctl }} enable {{ sh_db_restore_tmr }}"
+sh_db_restore_tmr_disable: "{{ sh_systemctl }} disable {{ sh_db_restore_tmr }}"
+sh_db_restore_tmr_start: "{{ sh_systemctl }} start {{ sh_db_restore_tmr }}"
+sh_db_restore_tmr_restart: "{{ sh_systemctl }} restart {{ sh_db_restore_tmr }}"
+
+# DB Archive Service SUDO Commands
+sh_db_archive_svc: "db_archive_hms_{{ hospital }}.service"
+sh_db_archive_svc_enable: "{{ sh_systemctl }} enable {{ sh_db_archive_svc }}"
+sh_db_archive_svc_disable: "{{ sh_systemctl }} disable {{ sh_db_archive_svc }}"
+
+# DB Archive Timer SUDO Commands
+sh_db_archive_tmr: "db_archive_hms_{{ hospital }}.timer"
+sh_db_archive_tmr_enable: "{{ sh_systemctl }} enable {{ sh_db_archive_tmr }}"
+sh_db_archive_tmr_disable: "{{ sh_systemctl }} disable {{ sh_db_archive_tmr }}"
+sh_db_archive_tmr_start: "{{ sh_systemctl }} start {{ sh_db_archive_tmr }}"
+sh_db_archive_tmr_restart: "{{ sh_systemctl }} restart {{ sh_db_archive_tmr }}"
+
+# Logrotate Service SUDO Commands
+sh_logrotate_svc: "logrotate.service"
+sh_logrotate_enable: "{{ sh_systemctl }} enable {{ sh_logrotate_svc }}"
+sh_logrotate_disable: "{{ sh_systemctl }} disable {{ sh_logrotate_svc }}"
+
+# Logrotate Timer SUDO Commands
+sh_logrotate_tmr: "logrotate.timer"
+sh_logrotate_tmr_stop: "{{ sh_systemctl }} stop {{ sh_logrotate_tmr }}"
+sh_logrotate_tmr_start: "{{ sh_systemctl }} start {{ sh_logrotate_tmr }}"
+sh_logrotate_tmr_restart: "{{ sh_systemctl }} restart {{ sh_logrotate_tmr }}"
+
+# Web Backup Service SUDO Commands
+sh_web_backup_svc: "web_backup_{{ hospital }}.service"
+sh_web_backup_svc_enable: "{{ sh_systemctl }} enable {{ sh_web_backup_svc }}"
+sh_web_backup_svc_disable: "{{ sh_systemctl }} disable {{ sh_web_backup_svc }}"
+
+# Web Cache Clear Timer SUDO Commands
+sh_web_cache_clr_tmr: "web_cahe_clear_{{ hospital }}.timer"
+sh_web_cache_clr_tmr_stop: "{{ sh_systemctl }} stop {{ sh_logrotate_tmr }}"
+sh_web_cache_clr_tmr_start: "{{ sh_systemctl }} start {{ sh_logrotate_tmr }}"
+sh_web_cache_clr_tmr_restart: "{{ sh_systemctl }} restart {{ sh_logrotate_tmr }}"
+
+# WWeb Cache Clear Service SUDO Commands
+sh_web_cache_clr_svc: "web_cahe_clear_{{ hospital }}.service"
+sh_web_cache_clr_svc_enable: "{{ sh_systemctl }} enable {{ sh_web_backup_svc }}"
+sh_web_cache_clr_svc_disable: "{{ sh_systemctl }} disable {{ sh_web_backup_svc }}"
+
+# Web Backup Timer SUDO Commands
+sh_web_backup_tmr: "web_backup_{{ hospital }}.timer"
+sh_web_backup_tmr_stop: "{{ sh_systemctl }} stop {{ sh_web_backup_tmr}}"
+sh_web_backup_tmr_start: "{{ sh_systemctl }} start {{ sh_web_backup_tmr}}"
+sh_web_backup_tmr_restart: "{{ sh_systemctl }} restart {{ sh_web_backup_tmr}}"
+
+# Web Logs Service SUDO Commands
+sh_web_logs_svc: "hms-logs_transfer.service"
+sh_web_logs_svc_enable: "{{ sh_systemctl }} enable {{ sh_web_logs_svc }}"
+sh_web_logs_svc_disable: "{{ sh_systemctl }} disable {{ sh_web_logs_svc }}"
+
+# Web Logs Timer SUDO Commands
+sh_web_logs_tmr: "hms-logs_transfer.timer"
+sh_web_logs_tmr_stop: "{{ sh_systemctl }} stop {{ sh_web_logs_tmr}}"
+sh_web_logs_tmr_start: "{{ sh_systemctl }} start {{ sh_web_logs_tmr}}"
+sh_web_logs_tmr_restart: "{{ sh_systemctl }} restart {{ sh_web_logs_tmr}}"
+
+# App Backup Service SUDO Commands
+sh_app_backup_svc: "app_backup_{{ hospital }}.service"
+sh_app_backup_svc_enable: "{{ sh_systemctl }} enable {{ sh_app_backup_svc }}"
+sh_app_backup_svc_disable: "{{ sh_systemctl }} disable {{ sh_app_backup_svc }}"
+
+# App Logs Service SUDO Commands
+sh_app_logs_svc: "app_backup_{{ hospital }}.service"
+sh_app_logs_svc_enable: "{{ sh_systemctl }} enable {{ sh_app_logs_svc }}"
+sh_app_logs_svc_disable: "{{ sh_systemctl }} disable {{ sh_app_logs_svc }}"
+
+# App Logs Timer SUDO Commands
+sh_app_logs_tmr: "app_backup_{{ hospital }}.timer"
+sh_app_logs_tmr_stop: "{{ sh_systemctl }} stop {{ sh_app_logs_tmr}}"
+sh_app_logs_tmr_start: "{{ sh_systemctl }} start {{ sh_app_logs_tmr}}"
+sh_app_logs_tmr_restart: "{{ sh_systemctl }} restart {{ sh_app_logs_tmr}}"
+
+# App Backup Timer SUDO Commands
+sh_app_backup_tmr: "app_backup_{{ hospital }}.timer"
+sh_app_backup_tmr_stop: "{{ sh_systemctl }} stop {{ sh_app_backup_tmr}}"
+sh_app_backup_tmr_start: "{{ sh_systemctl }} start {{ sh_app_backup_tmr}}"
+sh_app_backup_tmr_restart: "{{ sh_systemctl }} restart {{ sh_app_backup_tmr}}"
+
+# HL7 Web Backup Service SUDO Commands for JHS
+sh_hl7_web_backup_svc: "hl7_web_backup_{{ cluster }}.service"
+sh_hl7_web_backup_svc_enable: "{{ sh_systemctl }} enable {{ sh_hl7_web_backup_svc }}"
+sh_hl7_web_backup_svc_disable: "{{ sh_systemctl }} disable {{ sh_hl7_web_backup_svc }}"
+
+# HL7 Web Backup Timer SUDO Commands for JHS
+sh_hl7_web_backup_tmr: "hl7_web_backup_{{ cluster }}.timer"
+sh_hl7_web_backup_tmr_stop: "{{ sh_systemctl }} stop {{ sh_hl7_web_backup_tmr}}"
+sh_hl7_web_backup_tmr_start: "{{ sh_systemctl }} start {{ sh_hl7_web_backup_tmr}}"
+sh_hl7_web_backup_tmr_restart: "{{ sh_systemctl }} restart {{ sh_hl7_web_backup_tmr}}"
+
+# SELinux Restorecon
+selinux_restorecon: "sudo restorecon -Rv"
+# apache user
+apache_user: "apache"
+
+# PostgreSQL Service account
+postgresql_user: "hmsdba"
