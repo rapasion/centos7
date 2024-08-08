@@ -1,0 +1,9 @@
+[Unit]
+Description=Run logrotate service everyday at 23:55
+
+[Timer]
+Unit=logrotate.service
+OnCalendar=*-*-* 06,12,23:55:00
+
+[Install]
+WantedBy=timers.target
