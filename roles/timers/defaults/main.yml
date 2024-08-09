@@ -1,0 +1,177 @@
+## Basic Variables
+server: web
+sets:
+  set_a: 1
+  set_b: 2
+script_location: "{{ gml_source_path }}/scripts/"
+code_user: gmlops1
+root_user: root
+postgresql_user: hmsdba
+
+## Variables for GML Source path
+gml_source_path: /export/home/gml_source
+gml_logrotate_path: "{{ gml_source_path }}/logrotate"
+gml_password_file: "{{ gml_source_path }}/.pwdfl"
+
+## Variables for logrotate log
+hospital_home_dir: "/export/home/hms/{{ hospital }}"
+httpd_log_path: "{{ gml_source_path }}/logs/apache/"
+php_fpm_log_path: "{{ gml_source_path }}/logs/php-fpm/"
+laravel_log_path:  "{{ hospital_home_dir }}/storage/logs/"
+mysql_log_path: "{{ gml_source_path }}/logs/mysql/"
+pgbouncer_log_path: "{{ gml_source_path }}/logs/pgbouncer/"
+backup_log_path: "{{ gml_source_path }}/logs/backup/"
+postgresql_log_path: /xpool/postgre_data/pg_log
+hl7_postgresql_log_path: /ypool/xpool/postgre_data/pg_log
+
+## Variables for archiving logs/backup: JHS
+shared_drive: /export/home/shared_drive
+shared_archive: /export/home/shared_archive
+shared_archive_postgresql_db_backup_dir: "{{ shared_archive }}/postgresql_db_backup/{{ hospital }}"
+shared_archive_postgresql_hl7_db_backup_dir: "{{ shared_archive }}/postgresql_hl7_db_backup/{{ hospital }}"
+shared_archive_mysql_db_backup_dir: "{{ shared_archive }}/mysql_db_backup/{{ hospital }}"
+shared_archive_web_code_backup_dir:
+  - "{{ shared_archive }}/web_code_backup/{{ server }}{{ sets.set_a }}/"
+  - "{{ shared_archive }}/web_code_backup/{{ server }}{{ sets.set_b }}/"
+shared_archive_app_code_backup_dir:
+  - "{{ shared_archive }}/app_code_backup/app{{ sets.set_a }}/"
+  - "{{ shared_archive }}/app_code_backup/app{{ sets.set_b }}/"
+shared_archive_hl7_code_backup_dir:
+  - "{{ shared_archive }}/app_code_backup/hl7{{ sets.set_a }}/"
+  - "{{ shared_archive }}/app_code_backup/hl7{{ sets.set_b }}/"
+shared_archive_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}"
+shared_archive_httpd_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/apache/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/apache/"
+shared_archive_php_fpm_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/php-fpm/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/php-fpm/"
+shared_archive_laravel_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/laravel/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/laravel/"
+shared_archive_mysql_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/mysql/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/mysql/"
+shared_archive_pgbouncer_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/pgbouncer/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/pgbouncer/"
+shared_archive_hms_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/hms-logs/{{ hospital }}"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/hms-logs/{{ hospital }}"
+shared_archive_webapilog_hms_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/hms-logs/{{ hospital }}/webapilog/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/hms-logs/{{ hospital }}/webapilog/"
+shared_archive_pgsql_log_backup_dir:
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_a }}/pgsql/"
+  - "{{ shared_archive }}/log_backup/{{ server }}{{ sets.set_b }}/pgsql/"
+
+## Variables for archiving logs/backup: KTPH and TTSH
+shared_drive: /export/home/shared_drive
+shared_drive_log_backup_dir: "{{ shared_drive }}/log_backup"
+shared_drive_postgresql_db_backup_dir: "{{ shared_drive }}/postgresql_db_backup/{{ hospital }}"
+shared_drive_postgresql_hl7_db_backup_dir: "{{ shared_drive }}/postgresql_hl7_db_backup/{{ hospital }}"
+shared_drive_mysql_db_backup_dir: "{{ shared_drive }}/mysql_db_backup/{{ hospital }}"
+shared_drive_web_code_backup_dir:
+  - "{{ shared_drive }}/web_code_backup/{{ server }}{{ sets.set_a }}/"
+  - "{{ shared_drive }}/web_code_backup/{{ server }}{{ sets.set_b }}/"
+shared_drive_app_code_backup_dir:
+  - "{{ shared_drive }}/app_code_backup/app{{ sets.set_a }}/"
+  - "{{ shared_drive }}/app_code_backup/app{{ sets.set_b }}/"
+shared_drive_hl7_code_backup_dir:
+  - "{{ shared_drive }}/app_code_backup/hl7{{ sets.set_a }}/"
+  - "{{ shared_drive }}/app_code_backup/hl7{{ sets.set_b }}/"
+#shared_drive_log_backup_dir:
+#  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}"
+#  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}"
+shared_drive_httpd_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/apache/"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/apache/"
+shared_drive_php_fpm_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/php-fpm/"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/php-fpm/"
+shared_drive_laravel_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/laravel/"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/laravel/"
+shared_drive_mysql_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/mysql/"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/mysql/"
+shared_drive_pgbouncer_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/pgbouncer/"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/pgbouncer/"
+shared_drive_hms_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/hms-logs/{{ hospital }}"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/hms-logs/{{ hospital }}"
+shared_drive_webapilog_hms_log_backup_dir:
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/hms-logs/{{ hospital }}/webapilog/"
+  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/hms-logs/{{ hospital }}/webapilog/"
+#shared_drive_pgsql_log_backup_dir:
+#  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_a }}/pgsql/"
+#  - "{{ shared_drive }}/log_backup/{{ server }}{{ sets.set_b }}/pgsql/"
+shared_drive_pgsql_log_backup_dir:
+  - "{{ shared_drive_log_backup_dir }}/{{ hospital }}/{{ server }}1"
+  - "{{ shared_drive_log_backup_dir }}/{{ hospital }}/{{ server }}2"
+
+## Variables for DB Backup
+#cluster: jhc
+#hospital: jmc
+db_name: "hms_{{ hospital }}"
+db_port: 6433
+db_user: gmldba
+db_data_path: /ypool/data
+db_backup_dir: "/xpool/{{ hospital }}_dumps/"
+db_backup_script: "db_{{ hospital }}_dump.sh"
+db_backup_file: "hms_{{ hospital }}_db_backup.gz"
+db_backup_log: "db_backup.log"
+db_pgsql_location: "{{ gml_source_path }}/postgres/12-gml/bin/"
+db_restore_log: "db_restore_{{ hospital }}.log"
+db_move_log: "db_move_dump_{{ hospital }}.log"
+db_archive_log: "db_archive_{{ hospital }}.log"
+postgresql_log: /xpool/postgre_data
+pgsql_log_path: "{{ postgresql_log }}/pg_log"
+hl7_postgresql_log: /ypool/xpool/postgre_data
+hl7_pgsql_log_path: "{{ hl7_postgresql_log }}/pg_log"
+
+## Variables for App Code Backup
+app_code_backup_dir: /export/home/code_backup/app_code_backups/
+app_code_backup_script: "app_{{ hospital }}_code_backup.sh"
+app_code_backup_file: "app_{{ hospital }}_backup.tar.gz"
+app_exclude_script: "app_{{ hospital }}_exclude_files.txt"
+app_code_dir: "{{ hospital_home_dir }}/htdocs"
+
+## Variables for Web Code Backup
+web_code_backup_dir: /export/home/code_backup/web_code_backups/
+web_code_backup_script: "web_{{ hospital }}_code_backup.sh"
+web_code_backup_file: "web_{{ hospital }}_backup.tar.gz"
+web_exclude_script: "web_{{ hospital }}_exclude_files.txt"
+web_onramp_dir: "{{ hospital_home_dir }}/onramp_web"
+web_htdocs_dir: "{{ hospital_home_dir }}/htdocs"
+
+## Variables for HL7 DB Backup
+hl7_db_name: hmshl7_{{ cluster }}
+hl7_db_port: 3360
+hl7_db_user: root
+hl7_db_pass: Dr7q4spU!
+hl7_db_data_path: /ypool/data
+hl7_db_backup_dir: "/export/home/{{ cluster }}_db_dump/"
+hl7_db_backup_script: "hl7_db_{{ hospital }}_dump.sh"
+hl7_db_backup_file: "{{ cluster }}_hl7_db_backup.sql.gz"
+hl7_db_backup_log: "{{ cluster }}_hl7_db_backup.log"
+hl7_db_mysqldump_location: "{{ gml_source_path }}/mysql8.0/bin/"
+hl7_db_mysql_sock: "{{ gml_source_path }}/run/mysql/mysqld.sock"
+
+## Variables for HL7 Web Code Backup
+hl7_web_code_backup_dir: "/export/home/code_backup/hl7_code_backups/"
+hl7_web_code_backup_script: "hl7_code_backup_{{ cluster }}.sh"
+hl7_web_code_backup_file: "hl7_backup_{{ cluster }}.tar.gz"
+hl7_web_exclude_script: "hl7_web_exclude_files_{{ cluster }}.txt"
+hl7_web_dir: "/export/home/hms/{{ cluster }}/htdocs"
+hl7_gateway_dir: "/export/home/hms/hmsgateway"
+
+## Logrotate logs path
+gml_logrotate_log_path: "{{ gml_source_path }}/logs/logrotate/"
+pgsql_logrotate_log: "{{ gml_source_path }}/logs/pgsql"
+
+# Variables for Web Cache Clear script
+web_cache_clear_script: "web_cache_clear_{{ hospital }}.sh"
