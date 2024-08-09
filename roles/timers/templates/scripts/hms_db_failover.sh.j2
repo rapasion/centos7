@@ -1,0 +1,16 @@
+
+#!/bin/bash
+
+master={{ db1 }}
+slave={{ db2 }}
+status=$({{ db_response }} -d postgres -h $master -p6443)
+response="$master:6433 - no response"
+
+if [ "$status" == "$response" ]
+    then
+    /export/home/gml_source/postgres/12-gml/bin/pg_ctl promote -D /ypool/data
+echo "Slave promoted to new Master. Change your app connection string to new Master address $slave"
+
+    else
+echo "Master is alive. Nothing to do."
+fi

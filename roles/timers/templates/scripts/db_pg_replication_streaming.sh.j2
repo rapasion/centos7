@@ -1,0 +1,70 @@
+#!/bin/bash
+read -p 'Proceed to run pgbasebackup? Press y if ok ' PROMPT
+
+shopt -s nocasematch
+if [ $PROMPT == 'y' ]; then
+
+read -p 'This will stop postgresql first. Press y to proceed ' PROMPT2
+
+shopt -s nocasematch
+if [ $PROMPT2 == 'y' ]; then
+
+echo "sudo systemctl start postgresql12"
+sudo systemctl start postgresql12
+
+read -p 'This will remove existing contents of the data directory. Press y to proceed ' PROMPT3
+
+shopt -s nocasematch
+if [ $PROMPT2 == 'y' ]; then
+
+echo "Clearing data directory"
+sudo rm -rf {{ db_data_path }}
+sudo mkdir {{ db_data_path }}
+sudo chown {{ code_user }}:{{ code_user }} {{ db_data_path }}
+
+{% if code_environment == 'prod' or code_environment == 'dr' %}
+{% if server == 'db' %}
+{% if db_set_a is defined and db_set_a == ansible_default_ipv4.address %}
+echo "PGHOSTADDR= {{ db_pgsql_location }}pg_basebackup --host={{ db_set_b }} --port={{ db_port }} --pgdata={{ db_data_path }} --username=hmsrep --verbose --progress --wal-method=stream --write-recovery-conf --checkpoint=fast"
+PGHOSTADDR= {{ db_pgsql_location }}pg_basebackup --host={{ db_set_b }} --port={{ db_port }} --pgdata={{ db_data_path }} --username=hmsrep --verbose --progress --wal-method=stream --write-recovery-conf --checkpoint=fast
+{% elif db_set_b is defined and db_set_b == ansible_default_ipv4.address %}
+echo "PGHOSTADDR= {{ db_pgsql_location }}pg_basebackup --host={{ db_set_a }} --port={{ db_port }} --pgdata={{ db_data_path }} --username=hmsrep --verbose --progress --wal-method=stream --write-recovery-conf --checkpoint=fast"
+PGHOSTADDR= {{ db_pgsql_location }}pg_basebackup --host={{ db_set_a }} --port={{ db_port }} --pgdata={{ db_data_path }} --username=hmsrep --verbose --progress --wal-method=stream --write-recovery-conf --checkpoint=fast
+{% endif %}
+{% endif %}
+{% endif %}
+
+echo "Fix permissions of data directory"
+sudo chown hmsdba:{{ code_user }} {{ db_data_path }}
+
+sleep 2
+
+echo "Change data dir permission to 750"
+sudo chmod 750 {{ db_data_path }}
+
+echo "du -sh {{ db_data_path }}"
+du -sh {{ db_data_path }}
+
+echo "sudo systemctl start postgresql12"
+sudo systemctl start postgresql12
+
+sleep 2
+echo '{{ db_pgsql_location }}psql -U {{ db_user }} -d postgres -p {{ db_port }} -c "select pid, status, receive_start_lsn, receive_start_tli, last_msg_send_time, last_msg_receipt_time, sender_host from pg_stat_wal_receiver"'
+
+{{ db_pgsql_location }}psql -U {{ db_user }} -d postgres -p {{ db_port }} -c "select pid, status, receive_start_lsn, receive_start_tli, last_msg_send_time, last_msg_receipt_time, sender_host from pg_stat_wal_receiver"
+
+exit 1
+
+fi
+
+else
+
+echo 'Exiting script'
+
+fi
+
+else 
+
+echo 'Exiting script'
+
+fi

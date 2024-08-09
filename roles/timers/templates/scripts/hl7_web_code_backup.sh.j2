@@ -1,0 +1,6 @@
+#!/bin/bash
+
+/usr/bin/tar cvfzX {{ hl7_web_code_backup_dir }}{{ hl7_web_code_backup_file}} {{ script_location }}{{ hl7_web_exclude_script }} {{ hl7_web_dir }}/* {{ hl7_gateway_dir }}/*  >/dev/null 2>&1
+
+/usr/bin/chmod 750 {{ hl7_web_code_backup_dir }}{{ hl7_web_code_backup_file}}
+

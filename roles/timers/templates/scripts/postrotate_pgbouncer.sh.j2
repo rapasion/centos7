@@ -1,0 +1,31 @@
+#!/bin/sh
+
+####################
+## CAPTURING LOGS ##
+####################
+exec >> {{ gml_logrotate_log_path }}postrotate_pgbouncer.log 2>&1
+
+############################################
+## START MOVING LOGS FROM LOCAL TO SHARED ##
+############################################
+echo "Starting to move pgbouncer logs to local shared"
+
+{% if cluster == 'jhs' %} ## JHS ##
+{% if web_set_b is defined and web_set_b == ansible_default_ipv4.address or app_set_b is defined and app_set_b == ansible_default_ipv4.address %}
+find {{ pgbouncer_log_path }} -maxdepth 1 -name '*_pgbouncer.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_archive }}/log_backup/{{ server }}2/pgbouncer/ \;
+{% else %}
+find {{ pgbouncer_log_path }} -maxdepth 1 -name '*_pgbouncer.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_archive }}/log_backup/{{ server }}1/pgbouncer \;
+{% endif %}
+{% endif %}
+
+{% if cluster != 'jhs' %} ## KTPH | TTSH | NUH ##
+{% if web_set_b is defined and web_set_b == ansible_default_ipv4.address or app_set_b is defined and app_set_b == ansible_default_ipv4.address or hl7_web_set_b is defined and hl7_web_set_b == ansible_default_ipv4.address %}
+find {{ pgbouncer_log_path }} -maxdepth 1 -name '*_pgbouncer.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_drive }}/log_backup/{{ server }}2/pgbouncer/ \;
+{% else %}
+find {{ pgbouncer_log_path }} -maxdepth 1 -name '*_pgbouncer.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_drive }}/log_backup/{{ server }}1/pgbouncer/ \;
+{% endif %}
+{% endif %}
+
+date
+
+exit 1

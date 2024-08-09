@@ -1,0 +1,160 @@
+#!/bin/bash
+set `date +%m" "%Y`
+dbuser="hmsdba"
+dbname="hms_nuh"
+dbip="127.0.0.1"
+dbport="6433"
+dbname_archive="hms_nuh_archive"
+curr_month=$1
+curr_yr=$2
+start_time="00:00:00"
+end_time="23:59:59"
+qtr="0"
+PSQL="/export/home/gml_source/bin/psql"
+PGDUMP="/export/home/gml_source/bin/pg_dump"
+CREATEDB="/export/home/gml_source/bin/createdb"
+
+#############################################
+## Previous Month and Year Check
+#############################################
+
+if [ $curr_month -eq 1 ]
+        then prev_month=12
+        prev_yr=`expr $curr_yr - 1`
+        prev2_yr=$prev_yr
+        prev3_yr=$prev_yr
+elif [ $curr_month -eq 2 ]
+        then prev2_yr=`expr $curr_yr - 1`
+        prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev3_yr=$prev2_yr
+elif [ $curr_month -eq 3 ]
+        then prev3_yr=`expr $curr_yr - 1`
+        prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev2_yr=$curr_yr
+else prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev2_yr=$curr_yr
+        prev3_yr=$curr_yr
+fi
+
+#############################################
+## Quarter Number Check
+#############################################
+
+if (( 1 <= $prev_month && $prev_month <= 3 ))
+then
+        qtr=1
+elif (( 4 <= $prev_month && $prev_month <= 6 ))
+then
+        qtr=2
+elif (( 7 <= $prev_month && $prev_month <= 9 ))
+then
+        qtr=3
+elif (( 10 <= $prev_month && $prev_month <= 12 ))
+then
+        qtr=4
+fi
+
+############################################
+## Check Last 2 Months
+############################################
+
+if [ $prev_month -eq 1 ]
+        then prev2_month=12;
+elif [ $prev_month -eq 2 ]
+        then prev2_month=1;
+elif [ $prev_month -eq 3 ]
+        then prev2_month=2;
+else
+        prev2_month=`expr $prev_month - 1`
+fi
+
+############################################
+## Check Last 3 Months
+############################################
+
+if [ $prev_month -eq 1 ]
+        then prev3_month=11
+elif [ $prev_month -eq 2 ]
+        then prev3_month=12;
+elif [ $prev_month -eq 3 ]
+        then prev3_month=1;
+else
+        prev3_month=`expr $prev_month - 2`
+fi
+
+
+###########################################
+## Append "0" in Front of 1 Digit Months
+###########################################
+
+if [ $prev_month -lt 10 ]
+then prev_month="0"$prev_month
+fi
+
+if [ $prev2_month -lt 10 ]
+then prev2_month="0"$prev2_month
+fi
+
+if [ $prev3_month -lt 10 ]
+then prev3_month="0"$prev3_month
+fi
+
+
+############################################
+## First and Last Day Check
+############################################
+
+first_day="01"
+last_day=`cal $prev_month $prev_yr | egrep "28|29|30|31" |tail -1 |awk '{print $NF}'`
+#echo $qtr
+
+#############################################
+## Check if HMS Archive Database is created
+#############################################
+
+$PSQL -lqt -U $dbuser -p $dbport | grep $dbname_archive'_'$prev_yr
+if [ $? -eq 0 ]; then
+        echo "Yearly HMS archive database has already been created. Proceeding with dumping of dated tables for $prev_yr$prev_month"
+else
+        $CREATEDB -U $dbuser $dbname_archive'_'$prev_yr -p $dbport
+fi
+
+################################
+## Run on HMS BACKUP SERVER
+################################
+
+$PGDUMP -U $dbuser -p $dbport -t hms_clientmsg_archive_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_clinical_messagelog_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_sms_log_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_crr_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_ebroadcast_log_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_email_log_archive_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_leave_details_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_messagelog_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_labrad_msg_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_labrad_result_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_labrad_result_details_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_labrad_result_rad_details_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_patient_details_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_roster_details_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_smsstatus_log2_$prev_yr"q"$qtr $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_user_activity_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_labrad_result_status_archive_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+$PGDUMP -U $dbuser -p $dbport -t hms_crr_exception_$prev_yr$prev_month $dbname | $PSQL -U $dbuser $dbname_archive'_'$prev_yr -p $dbport;
+
+################################
+## Run GRANT for READ Users
+################################
+
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT USAGE ON SCHEMA public TO gmluser;"
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT USAGE ON SCHEMA public TO hmsapp;"
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT USAGE ON SCHEMA public TO pamdbread1;"
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT USAGE ON SCHEMA public TO pamdbread2;"
+
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO gmluser;"
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO hmsapp;"
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO pamdbread1;"
+$PSQL -U $dbuser -d $dbname_archive'_'$prev_yr -p $dbport -c "GRANT SELECT ON ALL TABLES IN SCHEMA public TO pamdbread2;"

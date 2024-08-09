@@ -1,0 +1,65 @@
+#!/bin/bash
+
+
+today=$(date +"%a")
+monthly=$(date +%d)
+datestamp=$(date +"%Y""%m")
+{{ hospital }}_dump="hms_{{ hospital }}_db_backup.gz"
+{{ hospital }}_dump_dir="/xpool/{{ hospital }}_dumps/"
+archive="{{ shared_drive }}/postgresql_db_backup/{{ hospital }}"
+
+exec >> /export/home/gml_source/logs/pgsql/db_moving_dump.log 2>&1
+
+#################################################################
+## FOR {{ hospital }} dump to move files to mounted >> PER DAY ##
+#################################################################
+
+echo "Moving {{ hospital }} DUMPS to mounted drive"
+
+if [ "$today" == "Mon" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/monday/ 2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive monday dir"
+elif [ "$today" == "Tue" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/tuesday/ 2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive tuesday dir"
+elif [ "$today" == "Wed" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/wednesday/  2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive wednesday dir"
+elif [ "$today" == "Thu" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/thursday/ 2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive thursday dir"
+elif [ "$today" == "Fri" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/friday/  2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive friday dir"
+elif [ "$today" == "Sat" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/saturday/  2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive saturday dir"
+elif [ "$today" == "Sun" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/sunday/  2>/dev/null \;
+        echo "Done copy over {{ hospital }}_dump to mounted drive sunday dir"
+fi
+
+sleep 2
+
+###############################################################
+## FOR {{ hospital }} dump to move files to mounted >> DAILY ##
+###############################################################
+
+find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" ${{ hospital }}_dump_dir${{ hospital }}_dump $archive/daily/ 2>/dev/null \;
+echo "Done copy over {{ hospital }}_dump to mounted drive daily dir"
+
+sleep 1
+
+#################################################################
+## FOR {{ hospital }} dump to move files to mounted >> MONTHLY ##
+#################################################################
+
+if [ "$monthly" == "01" ];then
+        find ${{ hospital }}_dump_dir -name 'hms_{{ hospital }}_db_backup.gz' -mmin -120 -type f -exec cp "{}" $archive/monthly/hms_{{ hospital }}_db_backup_$datestamp.gz 2>/dev/null \;
+        echo "Done moving {{ hospital }}_dump to mounted drive monthly dir"
+fi
+
+echo "Done"
+
+date
+exit 1

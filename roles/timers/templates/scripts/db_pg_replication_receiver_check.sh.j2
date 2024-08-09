@@ -1,0 +1,6 @@
+#!/bin/bash
+
+
+echo " checking pg_stat_wal_receiver status"
+{{ db_pgsql_location }}psql -U {{ db_user }} -d postgres -p {{ db_port }} -c "select pid, status, receive_start_lsn, receive_start_tli, last_msg_send_time, last_msg_receipt_time, sender_host from pg_stat_wal_receiver"
+

@@ -1,0 +1,31 @@
+#!/bin/sh
+
+####################
+## CAPTURING LOGS ##
+####################
+exec >> {{ gml_logrotate_log_path }}postrotate_laravel.log 2>&1
+
+############################################
+## START MOVING LOGS FROM LOCAL TO SHARED ##
+############################################
+echo "Starting to move laravel logs to local shared"
+
+{% if cluster == 'jhs' %} ## JHS ##
+{% if web_set_b is defined and web_set_b == ansible_default_ipv4.address %}
+find {{ laravel_log_path }} -maxdepth 1 -name 'laravel.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_archive }}/log_backup/{{ server }}2/laravel/ \;
+{% else %}
+find {{ laravel_log_path }} -maxdepth 1 -name 'laravel.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_archive }}/log_backup/{{ server }}1/laravel/ \;
+{% endif %}
+{% endif %}
+
+{% if cluster != 'jhs' %} ## KTPH | TTSH | NUH ##
+{% if web_set_b is defined and web_set_b == ansible_default_ipv4.address %}
+find {{ laravel_log_path }} -maxdepth 1 -name 'laravel.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_drive }}/log_backup/{{ server }}2/laravel/ \;
+{% else %}
+find {{ laravel_log_path }} -maxdepth 1 -name 'laravel.log-*' -mtime +0 -type f -exec mv -v "{}" {{ shared_drive }}/log_backup/{{ server }}1/laravel/ \;
+{% endif %}
+{% endif %}
+
+date
+
+exit 1

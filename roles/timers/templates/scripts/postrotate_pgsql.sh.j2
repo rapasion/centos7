@@ -1,0 +1,43 @@
+#!/bin/sh
+
+{% if cluster == 'jhs' and server == 'db' %}
+{% if db_set_b is defined and db_set_b == ansible_default_ipv4.address %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_archive }}/log_backup/{{ hospital }}/{{ server }}2/pgsql/ \;
+{% elif db_set_a is defined and db_set_a == ansible_default_ipv4.address %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_archive }}/log_backup/{{ hospital }}/{{ server }}1/pgsql/ \;
+{% endif %}
+{% endif %}
+
+{% if cluster == 'jhs' and server == 'hl7_db' %}
+{% if hl7_db_set_b is defined and hl7_db_set_b == ansible_default_ipv4.address %}
+find {{ hl7_pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_archive }}/log_backup/jhc/{{ server }}2/pgsql/ \;
+{% elif hl7_db_set_a is defined and hl7_db_set_a == ansible_default_ipv4.address %}
+find {{ hl7_pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_archive }}/log_backup/jhc/{{ server }}1/pgsql/ \;
+{% endif %}
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'db' %}
+{% if db_set_b is defined and db_set_b == ansible_default_ipv4.address %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}2/pgsql/ \;
+{% elif db_set_a is defined and db_set_a == ansible_default_ipv4.address %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}1/pgsql/ \;
+{% endif %}
+{% endif %}
+
+{% if cluster == 'ktph' and server == 'hl7_db' %}
+{% if hl7_db_set_b is defined and hl7_db_set_b == ansible_default_ipv4.address %}
+find {{ hl7_pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}2/pgsql/ \;
+{% elif hl7_db_set_a is defined and hl7_db_set_a == ansible_default_ipv4.address %}
+find {{ hl7_pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}1/pgsql/ \;
+{% endif %}
+{% endif %}
+
+{% if cluster == 'ttsh' or cluster == 'nuh' and server == 'hl7_db' %}
+{% if hl7_db_set_b is defined and hl7_db_set_b == ansible_default_ipv4.address %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}2/pgsql/ \;
+{% elif hl7_db_set_a is defined and hl7_db_set_a == ansible_default_ipv4.address %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}1/pgsql/ \;
+{% endif %}
+{% endif %}
+
+exit 1

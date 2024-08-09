@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Stop PostgreSQL Service
+sudo systemctl stop postgresql12
+
+if [ $? -eq 0 ]; then
+    echo "PostgreSQL service has been stopped"
+
+    # Promote Passive DB
+    ssh {{ db_user }}@{{ db_set_b }} '{{ db_pgsql_location }}pg_ctl promote -D /ypool/data'
+
+else
+
+    echo "PostgreSQL service failed to stop. Script will end."
+    exit 1
+
+fi

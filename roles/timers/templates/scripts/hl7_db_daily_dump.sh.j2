@@ -1,0 +1,5 @@
+#!/usr/bin/bash
+
+{{ hl7_db_mysqldump_location }}mysqldump -v -u {{ hl7_db_user }} -p{{ hl7_db_pass }} --port={{ hl7_db_port }} --socket={{ hl7_db_mysql_sock }} --single-transaction --quick --lock-tables=false  {{ hl7_db_name }} | gzip > {{ hl7_db_backup_dir }}{{ hl7_db_backup_file }}
+
+exit 1

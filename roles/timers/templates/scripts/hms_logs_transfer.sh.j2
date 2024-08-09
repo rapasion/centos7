@@ -1,0 +1,147 @@
+#!/bin/bash
+
+{% if code_environment == 'prod' %}
+{% if cluster == 'jhs' and server == 'web' %}
+{{ hospital }}=/export/home/hms/{{ hospital }}/storage/logs/
+{{ hospital }}_apilog=/export/home/hms/{{ hospital }}/storage/logs/webapilog/
+{% if web_set_a is defined and web_set_a == ansible_default_ipv4.address %}
+{{ hospital }}_hms=/export/home/shared_archive/log_backup/web1/hms-logs/{{ hospital }}/
+{{ hospital }}_webapilog=/export/home/shared_archive/log_backup/web1/hms-logs/{{ hospital }}/webapilog/
+{% elif web_set_b is defined and web_set_b == ansible_default_ipv4.address %}
+{{ hospital }}_hms=/export/home/shared_archive/log_backup/web2/hms-logs/{{ hospital }}/
+{{ hospital }}_webapilog=/export/home/shared_archive/log_backup/web2/hms-logs/{{ hospital }}/webapilog/
+{% endif %}
+{% endif %}
+
+{% if cluster == 'jhs' and server == 'app' %}
+{{ hospital }}_webservices=/export/home/hms/{{ hospital }}/logs/
+{% if app_set_a is defined and app_set_a == ansible_default_ipv4.address %}
+{{ hospital }}_app_logs=/export/home/shared_archive/log_backup/app1/webservice-logs/
+{% elif app_set_b is defined and app_set_b == ansible_default_ipv4.address %}
+{{ hospital }}_app_logs=/export/home/shared_archive/log_backup/app2/webservice-logs/
+{% endif %}
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'web' %}
+{{ hospital }}=/export/home/hms/{{ hospital }}/storage/logs/
+{{ hospital }}_apilog=/export/home/hms/{{ hospital }}/storage/logs/webapilog/
+{% if web_set_a is defined and web_set_a == ansible_default_ipv4.address %}
+{{ hospital }}_hms=/export/home/shared_drive/log_backup/web1/hms-logs/{{ hospital }}/
+{{ hospital }}_webapilog=/export/home/shared_drive/log_backup/web1/hms-logs/{{ hospital }}/webapilog/
+{% elif web_set_b is defined and web_set_b == ansible_default_ipv4.address %}
+{{ hospital }}_hms=/export/home/shared_drive/log_backup/web2/hms-logs/{{ hospital }}/
+{{ hospital }}_webapilog=/export/home/shared_drive/log_backup/web2/hms-logs/{{ hospital }}/webapilog/
+{% endif %}
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'app' %}
+{{ hospital }}_webservices=/export/home/hms/{{ hospital }}/logs/
+{% if app_set_a is defined and app_set_a == ansible_default_ipv4.address %}
+{{ hospital }}_app_logs=/export/home/shared_drive/log_backup/app1/webservice-logs/
+{% elif app_set_b is defined and app_set_b == ansible_default_ipv4.address %}
+{{ hospital }}_app_logs=/export/home/shared_drive/log_backup/app2/webservice-logs/
+{% endif %}
+{% endif %}
+{% endif %}
+
+{% if code_environment == 'uat' or code_environment == 'dev' or code_environment == 'sit' %}
+{% if cluster == 'jhs' and server == 'web' %}
+{{ hospital }}_hms=/export/home/shared_archive/log_backup/web1/hms-logs/{{ hospital }}/
+{{ hospital }}_webapilog=/export/home/shared_archive/log_backup/web1/hms-logs/{{ hospital }}/webapilog/
+{{ hospital }}=/export/home/hms/{{ hospital }}/storage/logs/
+{{ hospital }}_apilog=/export/home/hms/{{ hospital }}/storage/logs/webapilog/
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'web' %}
+{{ hospital }}_hms=/export/home/shared_drive/log_backup/web1/hms-logs/{{ hospital }}/
+{{ hospital }}_webapilog=/export/home/shared_drive/log_backup/web1/hms-logs/{{ hospital }}/webapilog/
+{{ hospital }}=/export/home/hms/{{ hospital }}/storage/logs/
+{{ hospital }}_apilog=/export/home/hms/{{ hospital }}/storage/logs/webapilog/
+{% endif %}
+
+{% if cluster == 'jhs' and server == 'app' %}
+{{ hospital }}_app_logs=/export/home/shared_archive/log_backup/app1/webservice-logs/
+{{ hospital }}_webservices=/export/home/hms/{{ hospital }}/logs/
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'app' %}
+{{ hospital }}_app_logs=/export/home/shared_drive/log_backup/app1/webservice-logs/
+{{ hospital }}_webservices=/export/home/hms/{{ hospital }}/logs/
+{% endif %}
+{% endif %}
+
+{% if cluster == 'jhs' and server == 'hl7_web' %}
+{{ hospital }}_hl7=/export/home/hms/jhc/logs/
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'hl7_web' %}
+{{ hospital }}_hl7=/export/home/hms/{{ hospital }}/logs/
+{% endif %}
+
+## Variable for moving middlewares logs
+postrotate_script_location="/export/home/gml_source/scripts"
+
+####################
+## Capturing logs ##
+####################    
+exec >> /export/home/gml_source/logs/transfered_logs.log 2>&1
+
+#####################################################
+## Start Copy to shared_archive for {{ hospital }} ##
+#####################################################
+{% if server is defined and server == 'db' or server == 'hl7_db'%}
+echo "Running pgsql postrotate script"
+$postrotate_script_location"/postrotate_pgsql_{{ hospital }}.sh"
+sleep 5
+{% endif %}
+
+{% if server is defined and server == 'web' or server == 'hl7_web' or server == 'app' %}
+echo "Running php-fpm postrotate script"
+$postrotate_script_location"/postrotate_php-fpm_{{ hospital }}.sh"
+
+echo "sleeping for 5 secs.."
+sleep 5
+
+echo "Running pgbouncer postrotate script"
+$postrotate_script_location"/postrotate_pgbouncer_{{ hospital }}.sh"
+
+echo "sleeping for 5 secs.."
+sleep 5
+
+echo "Running httpd postrotate script"
+$postrotate_script_location"/postrotate_httpd_{{ hospital }}.sh"
+
+echo "sleeping for 5 secs.."
+sleep 5
+{% endif %}
+
+{% if server is defined and server == 'web' %}
+echo "Starting to move  over 7 days olders logs from hms to local shared"
+find ${{ hospital }} -maxdepth 1 \( -iname "*.log"  ! -iname "laravel.log" ! -iname "laravel_emergency.log" \) -mtime +7 -type f -exec mv -v "{}" ${{ hospital }}_hms \;
+
+echo "sleeping for 2 secs.."
+sleep 2
+
+echo "Starting to move over 7 days olders logs from webapilog to local shared"
+find ${{ hospital }}_apilog -maxdepth 1 -name '*.log' -mtime +7 -type f -exec mv -v "{}" ${{ hospital }}_webapilog \;
+
+echo "sleeping for 5 secs.."
+sleep 5
+
+echo "Running laravel postrotate script"
+$postrotate_script_location"/postrotate_laravel_{{ hospital }}.sh"
+{% endif %}
+
+{% if server is defined and server == 'app' %}
+echo "Starting to move  over 7 days olders logs from webservices logs to local shared"
+find ${{ hospital }}_webservices -maxdepth 1 -name '*.log' -mtime +7 -type f -exec mv -v "{}" ${{ hospital }}_app_logs \;
+{% endif %}
+
+{% if server is defined and server == 'hl7_web' %}
+echo "Removing Archive and Cleaner logs and retain today log only"
+find ${{ hospital }}_hl7 -maxdepth 1 \( -name "hms_cleaner_*.log" -o -name "hl7_archival_*.log" \) -mtime 0 -type f -exec rm -f "{}" \;
+{% endif %}
+
+date
+
+exit 1

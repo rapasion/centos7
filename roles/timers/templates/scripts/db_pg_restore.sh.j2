@@ -1,0 +1,31 @@
+#!/bin/bash
+
+{% if cluster == 'jhs' and server == 'db' %}
+PATH=/export/home/shared_archive/postgresql_db_backup/{{ hospital }}/daily/
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'db' %}
+PATH=/export/home/shared_drive/postgresql_db_backup/{{ hospital }}/daily/
+{% endif %}
+
+USER=hmsdba
+DB=hms_{{ hospital }}
+PORT=6433
+FILE=hms_{{ hospital }}_db_backup.gz
+
+/export/home/gml_source/postgres/12-gml/bin/dropdb -U $USER $DB -p $PORT
+/usr/bin/sleep 5
+/export/home/gml_source/postgres/12-gml/bin/createdb -U $USER $DB -p $PORT
+/usr/bin/sleep 5
+
+{% if encrypted_db is defined and encrypted_db == 'true' %}
+
+LOCAL_PATH="{{ db_backup_dir }}"
+/usr/bin/cat {{ gml_password_file }} | openssl enc -d -aes-256-cbc -salt -in $PATH/enc_$FILE -out $LOCAL_PATH$FILE -pass stdin
+/usr/bin/gunzip < $LOCAL_PATH$FILE | /export/home/gml_source/postgres/12-gml/bin/psql -U $USER $DB -p $PORT
+
+{% else %}
+
+/usr/bin/gunzip < $PATH$FILE | /export/home/gml_source/postgres/12-gml/bin/psql -U $USER $DB -p $PORT
+
+{% endif %}

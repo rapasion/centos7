@@ -1,0 +1,6 @@
+#!/bin/bash
+
+{{ db_pgsql_location }}psql -U {{ db_user }} -d postgres -p {{ db_port }} -c "select client_addr, state, sent_lsn, write_lsn, flush_lsn, replay_lsn from pg_stat_replication"
+
+exit 1
+

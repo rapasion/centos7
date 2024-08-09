@@ -1,0 +1,5 @@
+#!/bin/sh
+
+/usr/bin/tar cvfzX {{ app_code_backup_dir }}{{ app_code_backup_file}} {{ script_location }}{{ app_exclude_script }} {{ app_code_dir }}/* >/dev/null 2>&1
+
+/usr/bin/chmod 750 {{ app_code_backup_dir }}{{ app_code_backup_file}}
