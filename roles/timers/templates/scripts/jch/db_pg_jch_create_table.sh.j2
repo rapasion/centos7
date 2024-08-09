@@ -1,0 +1,127 @@
+#!/bin/bash
+set `date +%m" "%Y`
+dbuser="hmsdba"
+dbname="hms_jch"
+dbport="6433"
+curr_month=$1
+curr_yr=$2
+start_time="00:00:00"
+end_time="23:59:59"
+qtr="0"
+PGDUMP="/export/home/gml_source/postgres/12-gml/bin/pg_dump"
+PSQL="/export/home/gml_source/postgres/12-gml/bin/psql"
+
+#############################################
+## Previous Month and Year Check
+#############################################
+
+if [ $curr_month -eq 1 ]
+        then prev_month=12
+        prev_yr=`expr $curr_yr - 1`
+        prev2_yr=$prev_yr
+        prev3_yr=$prev_yr
+elif [ $curr_month -eq 2 ]
+        then prev2_yr=`expr $curr_yr - 1`
+        prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev3_yr=$prev2_yr
+elif [ $curr_month -eq 3 ]
+        then prev3_yr=`expr $curr_yr - 1`
+        prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev2_yr=$curr_yr
+else prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev2_yr=$curr_yr
+        prev3_yr=$curr_yr
+fi
+
+#############################################
+## Quarter Number Check
+#############################################
+
+if (( 1 <= $prev_month && $prev_month <= 3 ))
+then
+        qtr=1
+elif (( 4 <= $prev_month && $prev_month <= 6 ))
+then
+        qtr=2
+elif (( 7 <= $prev_month && $prev_month <= 9 ))
+then
+        qtr=3
+elif (( 10 <= $prev_month && $prev_month <= 12 ))
+then
+        qtr=4
+fi
+
+############################################
+## Check Last 2 Months
+############################################
+
+if [ $prev_month -eq 1 ]
+        then prev2_month=12;
+elif [ $prev_month -eq 2 ]
+        then prev2_month=1;
+elif [ $prev_month -eq 3 ]
+        then prev2_month=2;
+else
+        prev2_month=`expr $prev_month - 1`
+fi
+
+############################################
+## Check Last 3 Months
+############################################
+
+if [ $prev_month -eq 1 ]
+        then prev3_month=11
+elif [ $prev_month -eq 2 ]
+        then prev3_month=12;
+elif [ $prev_month -eq 3 ]
+        then prev3_month=1;
+else
+        prev3_month=`expr $prev_month - 2`
+fi
+
+
+###########################################
+## Append "0" in Front of 1 Digit Months
+###########################################
+
+if [ $prev_month -lt 10 ]
+then prev_month="0"$prev_month
+fi
+
+if [ $prev2_month -lt 10 ]
+then prev2_month="0"$prev2_month
+fi
+
+if [ $prev3_month -lt 10 ]
+then prev3_month="0"$prev3_month
+fi
+
+
+############################################
+## First and Last Day Check
+############################################
+
+first_day="01"
+last_day=`cal $prev_month $prev_yr | egrep "28|29|30|31" |tail -1 |awk '{print $NF}'`
+
+################################
+## Run on HMS BACKUP SERVER
+################################
+
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_clinical_messagelog_$prev_yr$prev_month AS SELECT * FROM hms_clinical_messagelog WHERE timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_crr_$prev_yr$prev_month AS SELECT * FROM hms_crr WHERE timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_email_log_archive_$prev_yr$prev_month AS SELECT * FROM hms_email_log WHERE email_datetime between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_messagelog_archive_$prev_yr$prev_month AS SELECT * FROM hms_messagelog WHERE timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table  hms_roster_entry_$prev_yr$prev_month AS select * from hms_roster_entry where start_datetime between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table  hms_jh_labrad_result_$prev_yr$prev_month AS select * from hms_jh_labrad_result where timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table  hms_roster_entry_audit_$prev_yr$prev_month AS SELECT * FROM hms_roster_entry_audit where created_datetime between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_sms_log_$prev_yr$prev_month AS SELECT * FROM hms_sms_log WHERE created_timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "INSERT INTO hms_smsstatus_log2_$prev_yr"q"$qtr SELECT * FROM hms_smsstatus_log2 WHERE timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_smsstatus_log2_$prev_yr"q"$qtr AS SELECT * FROM hms_smsstatus_log2 WHERE timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_user_activity_$prev_yr$prev_month AS SELECT * FROM hms_user_activity WHERE activity_date between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_patient_appointment_$prev_yr$prev_month AS SELECT * FROM hms_patient_appointment WHERE appointment_timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_patient_appointment_reminder_schedule_$prev_yr$prev_month AS SELECT * FROM hms_patient_appointment_reminder_schedule WHERE created_timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
+$PSQL -U $dbuser -d $dbname -p $dbport -c "create table hms_patient_appointment_messagelog_$prev_yr$prev_month AS SELECT * FROM hms_patient_appointment_messagelog WHERE sent_timestamp between '$prev_yr"-"$prev_month"-"$first_day $start_time' and '$prev_yr"-"$prev_month"-"$last_day $end_time';"
