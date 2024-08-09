@@ -1,0 +1,10 @@
+#!/bin/bash
+script_location="."
+
+if [ ! -d "/export/home/gml_source/logs/backup" ]; then
+    mkdir "/export/home/gml_source/logs/backup"
+fi
+
+$script_location"/db_pg_ntfgh_create_table.sh" > "/export/home/gml_source/logs/backup/ntfgh_archive_backup_"`date +20\%y-\%m-\%d_\%H:\%M:\%S`".log"
+sleep 5
+$script_location"/db_pg_ntfgh_table_dump.sh" > "/export/home/gml_source/logs/backup/ntfgh_archive_dump_"`date +20\%y-\%m-\%d_\%H:\%M:\%S`".log"
