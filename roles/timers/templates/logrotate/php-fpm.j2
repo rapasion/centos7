@@ -1,0 +1,11 @@
+{{ php_fpm_log_path }}*_error.log {
+        missingok
+        rotate 365
+        ifempty
+        create 640 {{ code_user }} {{ code_user }}
+        dateext
+        dateformat -%Y%m%d-%H.log
+        postrotate
+             /usr/bin/systemctl reload php-fpm
+        endscript
+}

@@ -1,0 +1,9 @@
+{{ mysql_log_path }}error.log {
+        size 5M
+        missingok
+        rotate 365
+        notifempty
+        create 640 {{ code_user }} {{ code_user }}
+        dateext
+        dateformat -%Y%m%d-%H.log
+        }

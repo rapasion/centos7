@@ -1,0 +1,11 @@
+{{ pgbouncer_log_path }}*_pgbouncer.log {
+        missingok
+        rotate 365
+        ifempty
+        create 640 {{ code_user }} {{ code_user }}
+        dateext
+        dateformat -%Y%m%d-%H.log
+        postrotate
+             /usr/bin/systemctl reload pgbouncer
+        endscript
+}

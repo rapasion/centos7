@@ -1,0 +1,9 @@
+{{ laravel_log_path }}laravel.log {
+        su {{ code_user }} {{ code_user }}
+        missingok
+        rotate 365
+        ifempty
+        create 640 {{ code_user }} {{ code_user }}
+        dateext
+        dateformat -%Y%m%d-%H.log
+}
