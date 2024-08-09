@@ -1,0 +1,283 @@
+---
+
+- name: Check Backup Log Dir Exists
+  stat:
+    path: "{{ backup_log_path }}"
+  register: register_backup_log_path_folder
+
+- name: Create Backup Log Dir Exists
+  file:
+    path: "{{ backup_log_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_backup_log_path_folder.stat.exists
+
+- name: Change permission of Backup Log Dir
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chmod 750 {{ backup_log_path }}"
+    - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ backup_log_path }}"
+
+- name: Ensure Script location is able to be written
+  file:
+    path: "{{ script_location }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0770'
+
+## DB Archive Scripts
+- name: DB Archiving - Create Table Script
+  block:
+  - name: Copy Archive DB table create Script
+    template:
+      src: "templates/scripts/archive_db_table_create.sh.j2"
+      dest: "{{ script_location }}db_pg_table_create_{{ hospital }}.sh"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+  - name: Ensure Archive DB table create Script has correct ownership and permission
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ script_location }}db_pg_table_create_{{ hospital }}.sh'
+      - 'sudo chmod 750 {{ script_location }}db_pg_table_create_{{ hospital }}.sh'
+  tags:
+    - script_archive_table_create
+
+- name: DB Archiving - Table Dump Script
+  block:
+  - name: Copy Archive DB table dump Script
+    template:
+      src: "templates/scripts/archive_db_table_dump.sh.j2"
+      dest: "{{ script_location }}db_pg_table_dump_{{ hospital }}.sh"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+  - name: Ensure Archive DB table dump Script has correct ownership and permission
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ script_location }}db_pg_table_dump_{{ hospital }}.sh'
+      - 'sudo chmod 750 {{ script_location }}db_pg_table_dump_{{ hospital }}.sh'
+  tags:
+    - script_archive_table_dump
+
+- name: DB Archiving - Combined Archival Script
+  block:
+  - name: Copy Archive_Dump_HMS Script
+    template:
+      src: "templates/scripts/{{ hospital }}/Archive_Dump_HMS.sh.j2"
+      dest: "{{ script_location }}Archive_Dump_HMS_{{ hospital }}.sh"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+  - name: Ensure Archive_Dump_HMS Script has correct ownership and permission
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ script_location }}Archive_Dump_HMS_{{ hospital }}.sh'
+      - 'sudo chmod 750 {{ script_location }}Archive_Dump_HMS_{{ hospital }}.sh'
+  tags:
+    - script_archive_dump_hms
+
+- name: DB Restoration Script
+  block:
+  - name: Copy DB Restore Script
+    template:
+      src: "templates/scripts/db_pg_restore.sh.j2"
+      dest: "{{ script_location }}db_pg_{{ hospital }}_restore.sh"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+  - name: Ensure DB Restore Script has correct ownership and permission
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ script_location }}db_pg_{{ hospital }}_restore.sh'
+      - 'sudo chmod 750 {{ script_location }}db_pg_{{ hospital }}_restore.sh'
+  tags:
+    - script_archive_restore_db
+
+- name: Archive DB Table Checker Script
+  block:
+  - name: Copy DB table checker Script
+    template:
+      src: "templates/scripts/archive_db_table_checker.sh.j2"
+      dest: "{{ script_location }}archive_db_table_checker_{{ hospital }}.sh"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+  - name: Ensure archive table checker script has correct ownership and permission
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ script_location }}{{ item }}'
+      - 'sudo chmod 750 {{ script_location }}{{ item }}'
+  tags:
+    - script_archive_table_checker
+
+- name: DB Restoration Log Path
+  block:
+  - name: Check if {{ backup_log_path }}{{ db_restore_log }} already exists
+    stat:
+      path: "{{ backup_log_path }}{{ db_restore_log }}"
+    register: register_pgsql_db_restore_log
+
+  - name: Create {{ backup_log_path }}{{ db_restore_log }}
+    shell: sh -c "{{ item }}"
+    with_items:
+     - 'sudo touch {{ backup_log_path }}{{ db_restore_log }}'
+    when: not register_pgsql_db_restore_log.stat.exists
+
+  - name:  Ensure DB restore log files have correct permissions
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ backup_log_path }}{{ db_restore_log }}'
+      - 'sudo chmod 640 {{ backup_log_path }}{{ db_restore_log }}'
+  tags:
+    - archive_db_restore_log
+
+- name: DB Archival Log Path
+  block:
+  - name: Check if {{ backup_log_path }}{{ db_archive_log }} already exists
+    stat:
+      path: "{{ backup_log_path }}{{ db_archive_log }}"
+    register: register_pgsql_db_archive_log
+
+  - name: Create {{ backup_log_path }}{{ db_archive_log }}
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo touch {{ backup_log_path }}{{ db_archive_log }}'
+    when: not register_pgsql_db_archive_log.stat.exists
+
+  - name:  Ensure DB archive dump log files have correct permissions
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ backup_log_path }}{{ db_archive_log }}'
+      - 'sudo chmod 640 {{ backup_log_path }}{{ db_archive_log }}'
+  tags:
+    - archive_db_dump_log
+
+- name: DB Restoration Systemd Entry - Timer
+  block:
+  - name: Check symlink for systemd Restore DB Backup Timer
+    stat:
+      path: /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.timer
+    register: register_systemd_db_restore_timer
+
+  - name: Export Restore DB Backup Timer.
+    template:
+      src: "templates/timer/db_restore.timer.j2"
+      dest: "{{ gml_source_path }}/startup/db_restore_{{ hospital }}.timer.j2"
+
+  - name: Copy Restore DB Backup Timer to systemd
+    command: 'sudo cp -f {{ gml_source_path }}/startup/db_restore_{{ hospital }}.timer.j2 /usr/lib/systemd/system/db_backup_restore_{{ hospital }}.timer'
+
+  - name: Create link from systemd - Restore DB Backup Timer
+    command: "{{ item }}"
+    with_items:
+      - 'sudo ln -s /usr/lib/systemd/system/db_backup_restore_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.timer'
+      - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.timer'
+      - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.timer'
+    when: not register_systemd_db_restore_timer.stat.exists
+
+  - name: Start DB Restore in Systemctl
+    shell: sh -c "{{ sh_db_restore_tmr_start }}"
+  tags:
+    - startup_db_restore_timer
+
+- name: DB Restoration Systemd Entry - Service
+  block:
+  - name: Check symlink for systemd Restore DB Backup Services
+    stat:
+      path: /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.service
+    register: register_systemd_db_restore_service
+
+  - name: Export Restore DB Backup Service
+    template:
+      src: "templates/service/db_restore.service.j2"
+      dest: "{{ gml_source_path }}/startup/db_restore_{{ hospital }}.service.j2"
+
+  - name: Copy Restore DB Backup Service to systemd
+    command: 'sudo cp -f {{ gml_source_path }}/startup/db_restore_{{ hospital }}.service.j2 /usr/lib/systemd/system/db_backup_restore_{{ hospital }}.service'
+
+  - name: Create link from systemd - Restore DB Backup Services
+    command: "{{ item }}"
+    with_items:
+      - 'sudo ln -s /usr/lib/systemd/system/db_backup_restore_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.service'
+      - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.service'
+      - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_restore_{{ hospital }}.service'
+    when: not register_systemd_db_restore_service.stat.exists
+
+  - name: Enable DB Restore in Systemctl
+    shell: sh -c "{{ sh_db_restore_svc_enable }}"
+  tags:
+    - startup_db_restore_service
+
+## ARCHIVE HMS DB TIMER AND SERVICE
+- name: DB Archival Systemd Entry - Timer
+  block:
+  - name: Check symlink for systemd Archive HMS DB Timer
+    stat:
+      path: /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.timer
+    register: register_systemd_db_archive_hms_timer
+
+  - name: Export Archive HMS DB Timer
+    template:
+      src: "templates/timer/db_archive_hms.timer.j2"
+      dest: "{{ gml_source_path }}/startup/db_archive_hms_{{ hospital }}.timer.j2"
+
+  - name: Copy Archive HMS DB Timer to systemd
+    command: 'sudo cp -f {{ gml_source_path }}/startup/db_archive_hms_{{ hospital }}.timer.j2 /usr/lib/systemd/system/db_archive_hms_{{ hospital }}.timer'
+
+  - name: Create link from systemd - Archive HMS DB Timer
+    command: "{{ item }}"
+    with_items:
+      - 'sudo ln -s /usr/lib/systemd/system/db_archive_hms_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.timer'
+      - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.timer'
+      - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.timer'
+    when: not register_systemd_db_archive_hms_timer.stat.exists
+
+  - name: Start DB Archive in Systemctl
+    shell: sh -c "{{ sh_db_archive_tmr_start }}"
+  tags:
+    - startup_db_archive_timer
+
+- name: DB Archival Systemd Entry - Service
+  block:
+  - name: Check symlink for systemd HMS DB Service
+    stat:
+      path: /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.service
+    register: register_systemd_db_archive_hms_service
+
+  - name: Export Archive HMS DB Service
+    template:
+      src: "templates/service/db_archive_hms.service.j2"
+      dest: "{{ gml_source_path }}/startup/db_archive_hms_{{ hospital }}.service.j2"
+
+  - name: Copy Archive HMS DB Service to systemd
+    command: 'sudo cp -f {{ gml_source_path }}/startup/db_archive_hms_{{ hospital }}.service.j2 /usr/lib/systemd/system/db_archive_hms_{{ hospital }}.service'
+
+  - name: Create link from systemd - Archive HMS DB Service
+    command: "{{ item }}"
+    with_items:
+      - 'sudo ln -s /usr/lib/systemd/system/db_archive_hms_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.service'
+      - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.service'
+      - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_archive_hms_{{ hospital }}.service'
+    when: not register_systemd_db_archive_hms_service.stat.exists
+
+  - name: Enable DB Archive in Systemctl
+    shell: sh -c "{{ sh_db_archive_svc_enable }}"
+  tags:
+    - startup_db_archive_service
+
+- name: Reload systemd
+  command: "{{ sh_systemctl }} daemon-reload"
+  tags:
+    - startup_db_restore_timer
+    - startup_db_restore_service
+    - startup_db_archive_timer
+    - startup_db_archive_service
