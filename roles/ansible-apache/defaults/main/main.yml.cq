@@ -1,21 +1,22 @@
 ---
-gml_source_path: "/export/home/gml_source"
+code_user: "root"
+gml_source_path: "/opt/gml_source"
 compressed_dir: "downloads"
-httpd_source_bin: "{{ gml_source_path }}/apache{{ httpd_version }}/bin/httpd"
-apr_source_url: "https://dlcdn.apache.org/apr/"
-apr_source_version: "apr-1.7.4"
-apr_source_checksum: "sha256:a4137dd82a185076fa50ba54232d920a17c6469c30b0876569e1c2a05ff311d9"
-apr_util_source_version: "apr-util-1.6.3"
-apr_util_source_checksum: "sha256:2b74d8932703826862ca305b094eef2983c27b39d5c9414442e9976a9acf1983"
+httpd_source_bin: "{{ gml_source_path }}/apache{{ httpd_version_number }}/bin/httpd"
+apr_source_url: "https://apache.osuosl.org//apr/"
+apr_source_version: "apr-1.7.0"
+apr_source_checksum: "sha256:48e9dbf45ae3fdc7b491259ffb6ccf7d63049ffacbc1c0977cced095e4c2d5a2"
+apr_util_source_version: "apr-util-1.6.1"
+apr_util_source_checksum: "sha256:b65e40713da57d004123b6319828be7f1273fbc6490e145874ee1177e112c459"
 httpd_installer_dir: "/export/home/hms/httpd-src/"
-httpd_install_path: "{{ gml_source_path }}/apache{{ httpd_version }}"
+httpd_install_path: "{{ gml_source_path }}/apache{{ httpd_version_number }}"
 httpd_source_url: "http://archive.apache.org/dist/httpd/{{ httpd_source_version }}.tar.gz"
-httpd_source_version: "httpd-{{ httpd_version }}"
+httpd_source_version: "httpd-{{ httpd_version_number }}"
 pcre_version: pcre-8.43
 pcre_source_install_path: "{{ gml_source_path }}/{{ pcre_version }}"
 httpd_source_configure_command: >
   ./configure
-  --prefix={{ gml_source_path }}/apache{{ httpd_version }}
+  --prefix={{ gml_source_path }}/apache{{ httpd_version_number }}
   --sysconfdir={{ gml_source_path }}/conf/apache
   --enable-mpms-shared=all
   --with-included-apr
@@ -23,9 +24,9 @@ httpd_source_configure_command: >
   --enable-watchdog
   --enable-ssl
   --with-pcre={{ pcre_source_install_path }}
-gml_source_httpd_file: "export_gml_source_{{ httpd_source_version }}.tar.gz"
+gml_source_httpd_file: "opt_gml_source_{{ httpd_source_version }}.tar.gz"
 
-#httpd_version_number: "2.4.53"
+httpd_version_number: "2.4.54"
 
 # update vars
 backup_dir: "{{ gml_source_path }}/backupdir/"
@@ -36,8 +37,7 @@ php_fpm_sockdir: "{{ gml_source_path }}/run/php-fpm"
 http_on: "false"
 https_on: "true"
 
-#apache_user: "daemon"
-apache_user: "apache"
+apache_user: "daemon"
 
 httpd_listen_ports:
   - ip: "{{ ansible_default_ipv4.address }}"
