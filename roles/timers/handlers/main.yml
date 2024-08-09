@@ -1,0 +1,102 @@
+ - name: enable logrotate
+   service:
+     name: "logrotate.service"
+     enabled: yes
+
+ - name: start logrotate.timer
+   service:
+     name: "logrotate.timer"
+     enabled: yes
+     state: started
+
+ - name: enable app_backup
+   shell: sh -c "{{ sh_app_backup_svc_enable }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: start app_backup.timer
+   shell: sh -c "{{ sh_app_backup_tmr_start }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: enable web_backup
+   shell: sh -c "{{ sh_web_backup_svc_enable }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: start web_backup.timer
+   shell: sh -c "{{ sh_web_backup_tmr_start }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: enable web_cache clear service
+   shell: sh -c "{{ sh_web_cache_clr_svc_enable }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: start web_cache clear timer
+   shell: sh -c "{{ sh_web_cache_clr_tmr_start }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: enable hms-logs_transfer
+   shell: sh -c "{{ sh_web_logs_svc_enable }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: start hms-logs_transfer.timer
+   shell: sh -c "{{ sh_web_logs_tmr_start }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+# - name: enable hl7_web_backup
+#   service:
+#     name: "hl7_web_backup_{{ cluster }}.service"
+#     enabled: yes
+
+# - name: start hl7_web_backup.timer
+#   service:
+#     name: "hl7_web_backup_{{ cluster }}.timer"
+#     enabled: yes
+#     state: started
+ - name: enable hl7_web_backup
+   shell: sh -c "{{ sh_hl7_web_backup_svc_enable }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: start hl7_web_backup.timer
+   shell: sh -c "{{ sh_hl7_web_backup_tmr_start }}"
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+
+ - name: enable db_backup
+   service:
+     name: "db_backup_{{ hospital }}.service"
+     enabled: yes
+
+ - name: start db_backup.timer
+   service:
+     name: "db_backup_{{ hospital }}.timer"
+     enabled: yes
+     state: started
+
+ - name: enable hl7_db_backup
+   service:
+     name: "hl7_db_backup_{{ cluster }}.service"
+     enabled: yes
+
+ - name: start hl7_db_backup.timer
+   service:
+     name: "hl7_db_backup_{{ cluster }}.timer"
+     enabled: yes
+     state: started
