@@ -1,0 +1,8 @@
+---
+ - name: Copy pgsql postrotate script
+   template: 
+     src: roles/timers/templates/scripts/postrotate_pgsql.sh.j2 
+     dest: "{{ script_location }}/postrotate_pgsql_{{ hospital }}.sh"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0754'

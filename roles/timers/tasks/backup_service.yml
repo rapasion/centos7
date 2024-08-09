@@ -1,0 +1,65 @@
+---
+
+ - name: Check Backup Log Dir Exists
+   stat:
+     path: "{{ backup_log_path }}"
+   register: register_backup_log_path_folder
+
+ - name: Create Backup Log Dir Exists
+   file:
+     path: "{{ backup_log_path }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: not register_backup_log_path_folder.stat.exists 
+
+ - name: Change permission of Backup Log Dir
+   shell: sh -c "{{ item }}"
+   with_items:
+     - "sudo chmod 750 {{ backup_log_path }}"
+     - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ backup_log_path }}"
+   when: 
+     - register_backup_log_path_folder.stat.exists
+     - server == 'db' or server == 'hl7_db'
+
+ - import_tasks: backup_db.yml
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+   when:
+    - server == "db"
+   tags:
+    - db_backup
+    - never
+
+ - import_tasks: backup_web.yml
+   when:
+    - server == "web"
+   tags:
+    - web_backup
+    - never
+
+ - import_tasks: backup_app.yml
+   when:
+    - server == "app"
+   tags:
+    - app_backup
+    - never
+
+ - import_tasks: backup_hl7_db.yml
+   become: yes
+   become_user: "{{ code_user }}"
+   become_method: sudo
+   when:
+    - server == "hl7_db"
+   tags:
+    - hl7_db_backup
+    - never
+
+ - import_tasks: backup_hl7_web.yml
+   when:
+    - server == "hl7_web"
+   tags:
+    - hl7_web_backup
+    - never

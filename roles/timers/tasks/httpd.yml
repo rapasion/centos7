@@ -1,0 +1,26 @@
+---
+ - name: httpd logrotate settings
+   become: yes
+   become_user: root
+   become_method: sudo
+   template: 
+     src: roles/timers/templates/logrotate/httpd.j2 
+     dest: "{{ gml_logrotate_path }}/04-httpd"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0640'
+
+ - name: Correct permission
+   shell: sh -c "{{ item }}"
+   with_items:
+    - "sudo chown root:{{ code_user }} {{ gml_logrotate_path }}/04-httpd"
+    - "sudo chmod 640 {{ gml_logrotate_path }}/04-httpd"
+
+ - name: Copy httpd postrotate script
+   template: 
+     src: roles/timers/templates/scripts/postrotate_httpd.sh.j2 
+     dest: "{{ script_location }}/postrotate_httpd_{{ hospital }}.sh"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0754'
+      

@@ -1,0 +1,36 @@
+--- 
+ - name: mysql logrotate settings
+   template: 
+     src: roles/timers/templates/logrotate/mysql.j2 
+     dest: "{{ script_location }}/mysql"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+
+ - name: Correct permission
+   shell: sh -c "{{ item }}"
+   with_items:
+    - "sudo chown root:{{ code_user }} {{ script_location }}/mysql"
+    - "sudo chmod 640 {{ script_location }}/mysql"
+
+###Comment out due to uncertainty###
+# - name: Ensure mysql directory in shared drive exists
+#  file:
+#     path: "{{ item }}"
+#     state: directory
+#     owner: "{{ code_user }}"
+#     group: "{{ code_user }}"
+#     mode: '0750'
+#   with_items:
+#     - "{{ shared_archive_mysql_db_backup_dir }}"
+#     - "{{ shared_archive_mysql_log_backup_dir }}"
+
+ - name: Ensure mysql directory in shared drive exists
+   shell: sh -c "{{ item }}"
+   with_items:
+    - "sudo mkdir -p {{ shared_archive_mysql_db_backup_dir }}"
+    - "sudo mkdir -p {{ shared_archive_mysql_log_backup_dir }}"
+    - "sudo chown {{ code_user }}:{{ code_user }} {{ shared_archive_mysql_db_backup_dir }}"
+    - "sudo chmod 750 {{ shared_archive_mysql_db_backup_dir }}"
+    - "sudo chown {{ code_user }}:{{ code_user }} {{ shared_archive_mysql_log_backup_dir }}"
+    - "sudo chmod 750 {{ shared_archive_mysql_log_backup_dir }}"

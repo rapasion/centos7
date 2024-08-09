@@ -1,0 +1,95 @@
+---
+
+ - name: Check sysmlink for systemd App Backup Service
+   stat:
+    path: "/etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.service"
+   register: register_app_backup_hospital_service
+
+ - name: Check sysmlink for systemd App Backup Service
+   stat:
+    path: "/etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.timer"
+   register: register_app_backup_hospital_timer
+
+ - name: Ensure Backup Dir Exists
+   file:
+     path: "{{ app_code_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+
+ - name: Ensure Backup Dir Exists in shared drive (JHS)
+   file:
+     path: "{{ shared_archive_app_code_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when:
+      - cluster == 'jhs'
+      
+ - name: Ensure Backup Dir Exists in shared drive
+   file:
+     path: "{{ shared_drive_app_code_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when:
+      - cluster != 'jhs'
+
+ - name: Copy app Backup Script
+   template:
+     src: "templates/scripts/app_code_backup.sh.j2"
+     dest: "{{ script_location }}{{ app_code_backup_script }}"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750' 
+
+ - name: Copy app Backup Folder list
+   template:
+     src: "templates/scripts/app_exclude_files.txt.j2"
+     dest: "{{ script_location }}{{ app_exclude_script }}"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750' 
+
+ - name: Export App Backup Service
+   template:
+      src: "roles/timers/templates/service/app_backup.service.j2"
+      dest: "{{ gml_source_path }}/startup/app_backup_{{ hospital }}.service"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+ - name: Copy app Backup Service
+   command: 'sudo cp -f {{ gml_source_path }}/startup/app_backup_{{ hospital }}.service /usr/lib/systemd/system/'
+
+ - name: Create link for systemd - app backup
+   command: "{{ item }}"
+   with_items:
+     - 'sudo ln -s /usr/lib/systemd/system/app_backup_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.service'
+     - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.service'
+     - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.service'
+   when: not register_app_backup_hospital_service.stat.exists
+   notify: enable app_backup
+
+ - name: Export App Backup Timer
+   template:
+      src: "roles/timers/templates/timer/app_backup.timer.j2"
+      dest: "{{ gml_source_path }}/startup/app_backup_{{ hospital }}.timer"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+ - name: Copy app Backup Timer
+   command: 'sudo cp -f {{ gml_source_path }}/startup/app_backup_{{ hospital }}.timer /usr/lib/systemd/system/'
+
+ - name: Create link for systemd - timer
+   command: "{{ item }}"
+   with_items:
+     - 'sudo ln -s /usr/lib/systemd/system/app_backup_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.timer'
+     - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.timer'
+     - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/app_backup_{{ hospital }}.timer'
+   when: not register_app_backup_hospital_timer.stat.exists
+   notify: start app_backup.timer

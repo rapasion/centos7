@@ -1,0 +1,25 @@
+---
+ - name: laravel logrotate settings
+   become: yes
+   become_user: root
+   become_method: sudo
+   template: 
+     src: roles/timers/templates/logrotate/laravel.j2 
+     dest: "{{ gml_logrotate_path }}/03-laravel_{{ hospital }}"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0640'
+
+ - name: Correct permission
+   shell: sh -c "{{ item }}"
+   with_items:
+    - "sudo chown root:{{ code_user }} {{ gml_logrotate_path }}/03-laravel_{{ hospital }}"
+    - "sudo chmod 640 {{ gml_logrotate_path }}/03-laravel_{{ hospital }}"
+
+ - name: copy laravel postrotate script
+   template: 
+     src: roles/timers/templates/scripts/postrotate_laravel.sh.j2 
+     dest: "{{ script_location }}/postrotate_laravel_{{ hospital }}.sh"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0754'

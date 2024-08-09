@@ -1,0 +1,142 @@
+---
+
+ - name: Check pgsql folder if exists under gml_source/logs/.
+   stat:
+     path: "{{ pgsql_logrotate_log }}"
+   register: register_pgsql_logrotate_log
+
+ - name: Ensure pgsql folder created under gml_source/logs/.
+   file:
+     path: "{{ pgsql_logrotate_log }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: not register_pgsql_logrotate_log.stat.exists
+
+ - name: Check Backup Dir Exists
+   stat:
+     path: "{{ db_backup_dir }}"
+   register: register_db_backup_dir
+
+ - name: Ensure Backup Dir Exists (HL7)
+   shell: sh -c "sudo su {{ postgresql_user }} -c 'mkdir {{ db_backup_dir }}'"
+   when: not register_db_backup_dir.stat.exists
+
+ - name: Change permission of Backup Dir
+   shell: sh -c "{{ item }}"
+   with_items:
+     - "sudo chmod 750 {{ db_backup_dir }}"
+     - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ db_backup_dir }}"
+
+ - name: Check Backup Dir Exists in shared drive (JHS)
+   stat:
+     path: "{{ shared_archive_postgresql_hl7_db_backup_dir }}"
+   register: register_shared_archive_postgresql_hl7_db_backup_dir_folder
+
+ - name: Create Backup Dir Exists in shared drive (JHS)
+   file:
+     path: "{{ shared_archive_postgresql_hl7_db_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: 
+     - not register_shared_archive_postgresql_hl7_db_backup_dir_folder.stat.exists 
+     - cluster == 'jhs'
+
+ - name: Check Backup Dir Exists in shared drive 
+   stat:
+     path: "{{ shared_drive_postgresql_hl7_db_backup_dir }}"
+   register: register_shared_drive_postgresql_hl7_db_backup_dir_folder
+
+ - name: Create Backup Dir Exists in shared drive
+   file:
+     path: "{{ shared_drive_postgresql_hl7_db_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: 
+     - not register_shared_drive_postgresql_hl7_db_backup_dir_folder.stat.exists 
+     - cluster != 'jhs'
+
+ - name: Copy HL7 DB Backup Script
+   template:
+     src: "templates/scripts/hl7_db_daily_dump.sh.j2"
+     dest: "{{ script_location }}{{ hl7_db_backup_script }}"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750' 
+   when:
+     - cluster == 'jhs'
+
+ - name: Copy HL7 DB Backup Script
+   template:
+     src: "templates/scripts/db_daily_dump.sh.j2"
+     dest: "{{ script_location }}{{ hl7_db_backup_script }}"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750' 
+   when:
+     - cluster != 'jhs'
+
+ - name: Check symlink for systemd HL7 DB Backup Timer
+   stat:
+     path: /etc/systemd/system/multi-user.target.wants/hl7_db_backup.timer
+   register: register_systemd_hl7_db_backup_timer
+   tags: startup
+
+ - name: Check symlink for systemd HL7 DB Backup Service
+   stat:
+     path: /etc/systemd/system/multi-user.target.wants/hl7_db_backup.service
+   register: register_systemd_hl7_db_backup_service
+   tags: startup
+
+ - name: Export HL7 DB Backup Timer.
+   template:
+     src: "templates/timer/hl7_db_backup.timer.j2"
+     dest: "{{ gml_source_path }}/startup/hl7_db_backup.timer.j2"
+   tags: startup
+
+ - name: Copy HL7 DB Backup Timer to systemd
+   command: 'sudo cp -f {{ gml_source_path }}/startup/hl7_db_backup.timer.j2 /usr/lib/systemd/system/hl7_db_backup.timer'
+   tags: startup
+
+ - name: Create link from systemd - HL7 DB Backup Timer
+   command: "{{ item }}"
+   with_items:
+     - 'sudo ln -s /usr/lib/systemd/system/hl7_db_backup.timer /etc/systemd/system/multi-user.target.wants/hl7_db_backup.timer'
+     - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/hl7_db_backup.timer'
+     - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/hl7_db_backup.timer'
+   when: not register_systemd_hl7_db_backup_timer.stat.exists
+   tags: startup
+
+ - name: Export HL7 DB Backup Service.
+   template:
+     src: "templates/service/hl7_db_backup.service.j2"
+     dest: "{{ gml_source_path }}/startup/hl7_db_backup.service.j2"
+   tags: startup
+
+ - name: Copy HL7 DB Backup Service to systemd
+   command: 'sudo cp -f {{ gml_source_path }}/startup/hl7_db_backup.service.j2 /usr/lib/systemd/system/hl7_db_backup.service'
+   tags: startup
+
+ - name: Create link from systemd - HL7 DB Backup Service
+   command: "{{ item }}"
+   with_items:
+     - 'sudo ln -s /usr/lib/systemd/system/hl7_db_backup.service /etc/systemd/system/multi-user.target.wants/hl7_db_backup.service'
+     - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/hl7_db_backup.service'
+     - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/hl7_db_backup.service'
+   when: not register_systemd_hl7_db_backup_timer.stat.exists
+   tags: startup
+
+ - name: Reload systemd
+   command: "{{ sh_systemctl }} daemon-reload"
+   tags: startup
+
+ - name: Enable HL7 DB Backup in Systemctl
+   shell: sh -c "{{ sh_hl7_db_backup_svc_enable }}"
+ 
+ - name: Start HL7 DB Backup in Systemctl
+   shell: sh -c "{{ sh_hl7_db_backup_tmr_start }}"

@@ -1,0 +1,25 @@
+--- 
+ - name: pgbouncer logrotate settings
+   become: yes
+   become_user: root
+   become_method: sudo
+   template: 
+     src: roles/timers/templates/logrotate/pgbouncer.j2 
+     dest: "{{ gml_logrotate_path }}/02-pgbouncer"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0640'
+
+ - name: Correct permission
+   shell: sh -c "{{ item }}"
+   with_items:
+    - "sudo chown root:{{ code_user }} {{ gml_logrotate_path }}/02-pgbouncer"
+    - "sudo chmod 640 {{ gml_logrotate_path }}/02-pgbouncer"
+
+ - name: copy pgbouncer postrotate script
+   template: 
+     src: roles/timers/templates/scripts/postrotate_pgbouncer.sh.j2 
+     dest: "{{ script_location }}/postrotate_pgbouncer_{{ hospital }}.sh"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0754'

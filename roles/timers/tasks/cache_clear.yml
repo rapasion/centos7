@@ -1,0 +1,51 @@
+---
+
+ - name: Check sysmlink for systemd Web Cache Clear Service
+   stat:
+    path: "/etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.service"
+   register: register_web_cache_clear_hospital_service
+
+ - name: Check sysmlink for systemd Web Cache Clear Timer
+   stat:
+    path: "/etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.timer"
+   register: register_web_cache_clear_hospital_timer
+
+ - name: Export Web Backup Service {{ gml_source_path }}/startup/
+   template:
+      src: roles/timers/templates/service/web_cache_clear.service.j2
+      dest: "{{ gml_source_path }}/startup/web_cache_clear_{{ hospital }}.service"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+ - name: Copy Web Backup Service script to systemd
+   command: 'sudo cp -f {{ gml_source_path }}/startup/web_cache_clear_{{ hospital }}.service /usr/lib/systemd/system/'
+ 
+ - name: Create link for systemd - Web Backup Service
+   command: "{{ item }}"
+   with_items:
+     - 'sudo ln -s /usr/lib/systemd/system/web_cache_clear_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.service'
+     - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.service'
+     - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.service'
+   when: not register_web_cache_clear_hospital_service.stat.exists
+   notify: enable web_cache_clear
+
+ - name: Export Web Backup Timer
+   template: 
+      src: roles/timers/templates/timer/web_cache_clear.timer.j2 
+      dest: "{{ gml_source_path }}/startup/web_cache_clear_{{ hospital }}.timer"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+
+ - name: Copy Web Backup Time script to systemd
+   command: 'sudo cp -f {{ gml_source_path }}/startup/web_cache_clear_{{ hospital }}.timer /usr/lib/systemd/system/'
+
+ - name: Create link for systemd - Web Backup Timer
+   command: "{{ item }}"
+   with_items:
+     - 'sudo ln -s /usr/lib/systemd/system/web_cache_clear_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.timer'
+     - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.timer'
+     - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/web_cache_clear_{{ hospital }}.timer'
+   when: not register_web_cache_clear_hospital_timer.stat.exists
+   notify: start web_cache_clear.timer

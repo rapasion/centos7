@@ -1,0 +1,343 @@
+---
+
+ - name: Check pgsql folder if exists under gml_source/logs/.
+   stat:
+     path: "{{ pgsql_logrotate_log }}"
+   register: register_pgsql_logrotate_log
+
+ - name: Ensure pgsql folder created under gml_source/logs/.
+   file:
+     path: "{{ pgsql_logrotate_log }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: not register_pgsql_logrotate_log.stat.exists
+
+ - name: Check Backup Dir Exists
+   stat:
+     path: "{{ db_backup_dir }}"
+   register: register_db_backup_dir
+
+ - name: Ensure Backup Dir Exists
+   shell: sh -c "sudo su {{ postgresql_user }} -c 'mkdir {{ db_backup_dir }}'"
+   when: not register_db_backup_dir.stat.exists
+
+ - name: Change permission of Backup Dir
+   shell: sh -c "{{ item }}"
+   with_items:
+     - "sudo chmod 750 {{ db_backup_dir }}"
+     - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ db_backup_dir }}"
+   when: not register_db_backup_dir.stat.exists
+
+ - name: Check Backup Dir Exists in shared drive (JHS)
+   stat:
+     path: "{{ shared_archive_postgresql_db_backup_dir }}"
+   register: register_shared_archive_postgresql_db_backup_dir_folder
+
+ - name: Create Backup Dir Exists in shared drive (JHS)
+   file:
+     path: "{{ shared_archive_postgresql_db_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: 
+     - not register_shared_archive_postgresql_db_backup_dir_folder.stat.exists 
+     - cluster == 'jhs'
+
+ - name: Check Backup Dir Exists in shared drive 
+   stat:
+     path: "{{ shared_drive_postgresql_db_backup_dir }}"
+   register: register_shared_drive_postgresql_db_backup_dir_folder
+
+ - name: Create Backup Dir Exists in shared drive
+   file:
+     path: "{{ shared_drive_postgresql_db_backup_dir }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   when: 
+     - not register_shared_drive_postgresql_db_backup_dir_folder.stat.exists 
+     - cluster != 'jhs'
+      
+ - name: Ensure script location can be modified by "{{ code_user }}"
+   shell: sh -c "{{ item }}"
+   with_items:
+     - 'sudo chown -R {{ code_user }}:{{ code_user }} {{ script_location }}'
+
+ - name: DB Transfer Script
+   block:
+   - name: Copy DB Move Script
+     template:
+       src: "templates/scripts/db_move_dump.sh.j2"
+       dest: "{{ script_location }}db_move_dump_{{ hospital }}.sh"
+       owner: "{{ code_user }}"
+       group: "{{ code_user }}"
+       mode: '0750'
+   tags:
+     - script_db_transfer
+
+ - name: DB Backup Script
+   block:
+   - name: Copy DB Backup Script
+     template:
+       src: "templates/scripts/db_daily_dump.sh.j2"
+       dest: "{{ script_location }}{{ db_backup_script }}"
+       owner: "{{ code_user }}"
+       group: "{{ code_user }}"
+       mode: '0750'
+   tags:
+     - script_db_backup
+
+ - name: Copy DB Replication Check Script
+   template:
+     src: "templates/scripts/db_pg_replication_check.sh.j2"
+     dest: "{{ script_location }}db_pg_replication_check.sh"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750' 
+   tags:
+     - script_db_replication_check_master
+
+ - name: Copy DB Swing Script
+   template:
+     src: "templates/scripts/db_pg_replication_streaming.sh.j2"
+     dest: "{{ script_location }}db_pg_replication_streaming.sh"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750'
+   tags:
+     - script_db_replication_swing
+
+ - name: Copy DB Replication Receiver Check Script
+   template:
+     src: "templates/scripts/db_pg_replication_receiver_check.sh.j2"
+     dest: "{{ script_location }}db_pg_replication_receiver_check.sh"
+     owner: "{{ code_user}}"
+     group: "{{ code_user}}"
+     mode: '0750' 
+   tags:
+     - script_db_replication_check_slave
+     
+ - name: Ensure All DB Script have correct permission
+   shell: sh -c "{{ item }}"
+   with_items:
+     - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ script_location }}db_*.sh'
+     - 'sudo chmod 750 {{ script_location }}db_*.sh' 
+   tags:
+     - script_db_transfer
+     - script_db_backup
+     - script_db_replication_check_master
+     - script_db_replication_swing
+     - script_db_replication_check_slave
+
+## DB Backup and Transfer Log
+ - name: DB Move Log
+   block:
+   - name: Check if {{ backup_log_path }}{{ db_move_log }} already exists
+     stat:
+       path: "{{ backup_log_path }}{{ db_move_log }}"
+     register: register_pgsql_db_move_log
+  
+   - name: Create {{ backup_log_path }}{{ db_move_log }}
+     shell: sh -c "{{ item }}"
+     with_items:
+       - 'sudo touch {{ backup_log_path }}{{ db_move_log }}'
+     when: not register_pgsql_db_move_log.stat.exists
+   tags: 
+     - db_transfer_log
+
+ - name: DB Backup Log
+   block:
+   - name: Check if {{ backup_log_path }}{{ db_backup_log }} already exists
+     stat:
+       path: "{{ backup_log_path }}{{ db_backup_log }}"
+     register: register_pgsql_db_backup_log
+  
+   - name: Create {{ backup_log_path }}{{ db_backup_log }}
+     shell: sh -c "{{ item }}"
+     with_items:
+       - 'sudo touch {{ backup_log_path }}{{ db_backup_log }}'
+     when: not register_pgsql_db_backup_log.stat.exists
+   tags: 
+     - db_backup_log
+
+ - name:  Ensure all log files have correct permissions
+   shell: sh -c "{{ item }}"
+   with_items:
+     - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ backup_log_path }}db_*.log'
+     - 'sudo chmod 640 {{ backup_log_path }}db_*.log'
+   tags: 
+     - db_transfer_log
+     - db_backup_log
+
+## HMS DB - PGSQL PASSWD
+ - name: Check {{ gml_password_file }} folder if exists
+   stat:
+     path: "{{ gml_password_file }}"
+   register: register_gml_pass_file
+   tags:
+     - deploy_gml_pwd
+
+ - name: Storing Password info for dbdump
+   block:
+   - name: Ensure {{ gml_password_file }} exist
+     shell: sh -c "touch {{ gml_password_file }}"
+
+   - name: Ensure {{ gml_password_file }} is empty
+     shell: sh -c "truncate -s 0 {{ gml_password_file }}"
+
+   - name: Store correct information to {{ gml_password_file }} 
+     lineinfile:
+       path: "{{ gml_password_file }}"
+       state: present
+       line: "{{ item }}"
+     with_items:
+       - "{{ gml_pwd }}"
+
+   - name: Change ownership of {{ gml_password_file }} file
+     shell: sh -c "{{ item }}"
+     with_items:
+       - "sudo chown {{ postgresql_user }}:{{ code_user }} {{ gml_password_file }} "
+       - "sudo chmod 600 {{ gml_password_file }}"
+   when:
+     - gml_pwd is defined
+     - not register_gml_pass_file.stat.exists
+   tags:
+     - deploy_gml_pwd
+
+## TRANSFER DB DUMP TIMER AND SERVICE
+ - name: DB Dump Transfer Systemd Entry - Timer
+   block:
+   - name: Check symlink for systemd Transfer DB Backup Timer
+     stat:
+      path: /etc/systemd/system/multi-user.target.wants/db_move_dump.timer
+     register: register_systemd_db_move_dump_timer
+  
+   - name: Export Transfer DB Backup Timer.
+     template:
+       src: "templates/timer/db_move_dump.timer.j2"
+       dest: "{{ gml_source_path }}/startup/db_move_dump.timer.j2"
+  
+   - name: Copy Transfer DB Backup Timer to systemd
+     command: 'sudo cp -f {{ gml_source_path }}/startup/db_move_dump.timer.j2 /usr/lib/systemd/system/db_move_dump.timer'
+  
+   - name: Create link from systemd - Transfer DB Backup Timer
+     command: "{{ item }}"
+     with_items:
+       - 'sudo ln -s /usr/lib/systemd/system/db_move_dump.timer /etc/systemd/system/multi-user.target.wants/db_move_dump.timer'
+       - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_move_dump.timer'
+       - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_move_dump.timer'
+     when: not register_systemd_db_move_dump_timer.stat.exists
+
+   - name: Start DB Transfer in Systemctl
+     shell: sh -c "{{ sh_db_move_dump_tmr_start }}"
+     when:
+       - db_set_b is defined
+       - db_set_a == ansible_default_ipv4.address     
+   tags:
+     - startup_db_transfer_timer
+
+ - name: DB Dump Transfer Systemd Entry - Service
+   block:
+   - name: Check symlink for systemd Transfer DB Backup Services
+     stat:
+       path: /etc/systemd/system/multi-user.target.wants/db_move_dump.service
+     register: register_systemd_db_move_dump_service
+     
+   - name: Export Transfer DB Backup Service
+     template:
+         src: "templates/service/db_move_dump.service.j2"
+         dest: "{{ gml_source_path }}/startup/db_move_dump.service.j2"
+  
+   - name: Copy Transfer DB Backup Service to systemd
+     command: 'sudo cp -f {{ gml_source_path }}/startup/db_move_dump.service.j2 /usr/lib/systemd/system/db_move_dump.service'
+  
+   - name: Create link from systemd - Transfer DB Backup Services
+     command: "{{ item }}"
+     with_items:
+       - 'sudo ln -s /usr/lib/systemd/system/db_move_dump.service /etc/systemd/system/multi-user.target.wants/db_move_dump.service'
+       - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_move_dump.service'
+       - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_move_dump.service'
+     when: not register_systemd_db_move_dump_service.stat.exists
+
+   - name: Enable DB Transfer in Systemctl
+     shell: sh -c "{{ sh_db_move_dump_svc_enable }}"
+     when:
+       - db_set_b is defined
+       - db_set_a == ansible_default_ipv4.address
+   tags:
+     - startup_db_transfer_service
+
+## BACKUP DB TIMER AND SERVICE
+ - name: DB Dump Backup Systemd Entry - Service
+   block:
+   - name: Check symlink for systemd DB Backup Service
+     stat:
+       path: /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.service
+     register: register_systemd_db_backup_service
+  
+   - name: Export DB Backup Service.
+     template:
+       src: "templates/service/db_backup.service.j2"
+       dest: "{{ gml_source_path }}/startup/db_backup.service.j2"
+  
+   - name: Copy DB Backup Service to systemd
+     command: 'sudo cp -f {{ gml_source_path }}/startup/db_backup.service.j2 /usr/lib/systemd/system/db_backup_{{ hospital }}.service'
+  
+   - name: Create link from systemd - DB Backup Service
+     command: "{{ item }}"
+     with_items:
+       - 'sudo ln -s /usr/lib/systemd/system/db_backup_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.service'
+       - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.service'
+       - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.service'
+     when: not register_systemd_db_backup_service.stat.exists
+
+   - name: Enable DB Backup in Systemctl
+     shell: sh -c "{{ sh_db_backup_svc_enable }}"
+     when:
+       - db_set_b is defined
+       - db_set_a == ansible_default_ipv4.address
+   tags:
+     - startup_db_backup_service
+
+ - name: DB Dump Backup Systemd Entry - Timer
+   block:
+   - name: Check symlink for systemd DB Backup Timer
+     stat:
+       path: /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.timer
+     register: register_systemd_db_backup_timer
+  
+   - name: Export DB Backup Timer.
+     template:
+       src: "templates/timer/db_backup.timer.j2"
+       dest: "{{ gml_source_path }}/startup/db_backup.timer.j2"
+  
+   - name: Copy DB Backup Timer to systemd
+     command: 'sudo cp -f {{ gml_source_path }}/startup/db_backup.timer.j2 /usr/lib/systemd/system/db_backup_{{ hospital }}.timer'
+  
+   - name: Create link from systemd - DB Backup Timer
+     command: "{{ item }}"
+     with_items:
+       - 'sudo ln -s /usr/lib/systemd/system/db_backup_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.timer'
+       - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.timer'
+       - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_{{ hospital }}.timer'
+     when: not register_systemd_db_backup_timer.stat.exists
+
+   - name: Start DB Backup in Systemctl
+     shell: sh -c "{{ sh_db_backup_tmr_start }}"
+     when:
+       - db_set_b is defined
+       - db_set_a == ansible_default_ipv4.address
+   tags:
+     - startup_db_backup_timer
+
+ - name: Reload systemd
+   command: "{{ sh_systemctl }} daemon-reload"
+   tags:
+     - startup_db_transfer_timer
+     - startup_db_transfer_service
+     - startup_db_backup_timer
+     - startup_db_backup_service

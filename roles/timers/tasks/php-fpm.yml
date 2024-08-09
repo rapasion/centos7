@@ -1,0 +1,25 @@
+---  
+ - name: php-fpm logrotate settings
+   become: yes
+   become_user: root
+   become_method: sudo
+   template: 
+     src: "roles/timers/templates/logrotate/php-fpm.j2"
+     dest: "{{ gml_logrotate_path }}/01-php-fpm"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0640'
+
+ - name: Correct permission
+   shell: sh -c "{{ item }}"
+   with_items:
+    - "sudo chown root:{{ code_user }} {{ gml_logrotate_path }}/01-php-fpm"
+    - "sudo chmod 640 {{ gml_logrotate_path }}/01-php-fpm"
+
+ - name: copy php-fpm postrotate script
+   template: 
+     src: "roles/timers/templates/scripts/postrotate_php-fpm.sh.j2"
+     dest: "{{ script_location }}/postrotate_php-fpm_{{ hospital }}.sh"
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0754'

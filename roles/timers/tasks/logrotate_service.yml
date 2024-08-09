@@ -1,0 +1,156 @@
+---
+
+ - name: Ensure logrotate log directory existed
+   file:
+     path: "{{ item }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   with_items:
+     - "{{ gml_logrotate_log_path }}"
+   tags:
+     - logrotate-php
+     - logrotate-httpd
+     - logrotate-pgbouncer
+     - logrotate-mysql
+     - logrotate-laravel
+     - logrotate-pgsql
+
+ - name: Ensure log directory in shared drive exists (JHS)
+   file:
+     path: "{{ item }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   with_items:
+     - "{{ shared_archive_log_backup_dir }}"
+     - "{{ shared_archive_httpd_log_backup_dir }}"
+     - "{{ shared_archive_php_fpm_log_backup_dir }}"
+     - "{{ shared_archive_laravel_log_backup_dir }}"
+     - "{{ shared_archive_pgbouncer_log_backup_dir }}"
+     - "{{ shared_archive_hms_log_backup_dir }}"
+     - "{{ shared_archive_webapilog_hms_log_backup_dir }}"
+   when:
+     - cluster == 'jhs'
+     - server == 'web' or server == 'app' or server == 'hl7_web'
+   tags:
+     - logrotate-php
+     - logrotate-httpd
+     - logrotate-pgbouncer
+     - logrotate-laravel
+
+ - name: Ensure log directory in shared drive exists
+   file:
+     path: "{{ item }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   with_items:
+     - "{{ shared_drive_log_backup_dir }}"
+     - "{{ shared_drive_httpd_log_backup_dir }}"
+     - "{{ shared_drive_php_fpm_log_backup_dir }}"
+     - "{{ shared_drive_laravel_log_backup_dir }}"
+     - "{{ shared_drive_pgbouncer_log_backup_dir }}"
+     - "{{ shared_drive_hms_log_backup_dir }}"
+     - "{{ shared_drive_webapilog_hms_log_backup_dir }}"
+   when:
+     - cluster != 'jhs'
+     - server == 'web' or server == 'app' or server == 'hl7_web'
+   tags:
+     - logrotate-php
+     - logrotate-httpd
+     - logrotate-pgbouncer
+     - logrotate-laravel
+
+ - name: Create {{ shared_archive }}/log_backup/{{ hospital }} directory (JHS)
+   block:
+   - name: Ensure {{ shared_archive }}/log_backup/{{ hospital }} log directory in DB shared archive exist (HMS)
+     shell: sh -c "{{ item }}"
+     with_items:
+       - '[[ -d {{ shared_archive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_a }}/pgsql/  ]] || sudo mkdir -p {{ shared_archive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_a }}/pgsql/'
+       - '[[ -d {{ shared_archive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_b }}/pgsql/  ]] || sudo mkdir -p {{ shared_archive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_b }}/pgsql/'
+
+   - name: Ensure {{ shared_archive }}/log_backup/{{ hospital }} have correct permissions
+     shell: sh -c "{{ item }}"
+     with_items:
+       - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_archive }}/log_backup/'
+       - 'sudo chmod -R 750 {{ shared_archive }}/log_backup/'
+   when:
+    - cluster == 'jhs'
+    - server == 'db' or server == 'hl7_db'
+   tags:
+    - logrotate-mysql
+    - logrotate-pgsql
+
+ - name: Create {{ shared_drive }}/log_backup/{{ hospital }} directory
+   block:
+   - name: Ensure {{ shared_drive }}/log_backup/{{ hospital }} log directory in DB shared drive exist (HMS)
+     shell: sh -c "{{ item }}"
+     with_items:
+       - '[[ -d {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_a }}/pgsql/  ]] || sudo mkdir -p {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_a }}/pgsql/'
+       - '[[ -d {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_b }}/pgsql/  ]] || sudo mkdir -p {{ shared_drive }}/log_backup/{{ hospital }}/{{ server }}{{ sets.set_b }}/pgsql/'
+
+   - name: Ensure {{ shared_drive }}/log_backup/{{ hospital }} have correct permissions
+     shell: sh -c "{{ item }}"
+     with_items:
+       - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/log_backup/'
+       - 'sudo chmod -R 750 {{ shared_drive }}/log_backup/'
+   when:
+    - cluster != 'jhs'
+    - server == 'db' or server == 'hl7_db'
+   tags:
+    - logrotate-mysql
+    - logrotate-pgsql
+
+ - import_tasks: php-fpm.yml
+   when:
+     - server == "web" or server == "app" or server == "hl7_web"
+   tags:
+     - logrotate-php
+
+ - import_tasks: httpd.yml
+   when:
+     - server == "web" or server == "app" or server == "hl7_web"
+   tags:
+     - logrotate-httpd
+
+ - import_tasks: mysql.yml
+   when:
+     - server == "hl7_db" and cluster == 'jhs'
+   tags:
+     - logrotate-mysql
+
+ - import_tasks: laravel.yml
+   when:
+     - server == "web"
+   tags:
+     - logrotate-laravel
+
+ - import_tasks: pgbouncer.yml
+   when:
+     - server == "web" or server == "app" or server == "hl7_web" 
+   tags:
+     - logrotate-pgbouncer
+
+ - import_tasks: pgsql.yml
+   when:
+     - server == "db" or server == "hl7_db" and cluster != 'jhs'
+   tags:
+     - logrotate-pgsql
+
+# - name: Copy Logrotate service
+#   template: src=roles/timers/templates/service/logrotate.service.j2 dest=/usr/lib/systemd/system/logrotate.service
+
+# - name: Create link for systemd - logrotate
+#   file: src=/usr/lib/systemd/system/logrotate.service dest=/etc/systemd/system/multi-user.target.wants/logrotate.service owner={{ code_user }} group={{ code_user }} state=link force=yes mode=0750
+#   notify: enable logrotate
+
+# - name: Copy Logrotate timer
+#   template: src=roles/timers/templates/timer/logrotate.timer.j2 dest=/usr/lib/systemd/system/logrotate.timer
+
+# - name: Create link for systemd - timer
+#   file: src=/usr/lib/systemd/system/logrotate.timer dest=/etc/systemd/system/multi-user.target.wants/logrotate.timer owner={{ code_user }} group={{ code_user }} state=link force=yes mode=0750
+#   notify: start logrotate.timer

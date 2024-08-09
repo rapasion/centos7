@@ -1,0 +1,74 @@
+---
+
+ - name: Ensure Timer Configuration Dir Exists
+   file:
+     path: "{{ gml_logrotate_path }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   tags:
+     - install_from_scratch
+     - logrotate_script
+     - backup_script
+     - hms_logs_script
+
+ - name: Ensure Script Location Dir Exists
+   file:
+     path: "{{ script_location }}"
+     state: directory
+     owner: "{{ code_user }}"
+     group: "{{ code_user }}"
+     mode: '0750'
+   tags:
+     - install_from_scratch
+     - logrotate_script
+     - backup_script
+     - hms_logs_script
+
+ - import_tasks: hms_logs.yml
+   tags:
+     - install_from_scratch
+     - hms_logs_script
+     - logrotate-php
+     - logrotate-httpd
+     - logrotate-pgbouncer
+     - logrotate-laravel
+     - logrotate-pgsql
+
+ - import_tasks: logrotate_service.yml
+   tags:
+     - install_from_scratch
+     - logrotate_script
+     - logrotate-php
+     - logrotate-httpd
+     - logrotate-pgbouncer
+     - logrotate-mysql
+     - logrotate-laravel
+     - logrotate-pgsql
+     
+ - import_tasks: backup_service.yml
+   tags:
+     - install_from_scratch
+     - backup_script
+     - db_backup
+     - web_backup
+     - app_backup
+     - hl7_db_backup
+     - hl7_web_backup
+
+ - import_tasks: archive_db.yml
+   tags:
+     - archive_db_backup
+     - never
+
+ - import_tasks: cache_clear.yml
+   when:
+     - server is defined and server == 'web'
+   tags:
+     - cache_clear
+     - never
+
+ - name: Reload systemd
+   command: "{{ sh_systemctl }} daemon-reload"
+   tags: always
