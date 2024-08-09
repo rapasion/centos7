@@ -1,0 +1,139 @@
+#!/bin/bash
+set `date +%m" "%Y`
+dbuser="hmsdba"
+dbname="hms_ktph"
+dbip="127.0.0.1"
+dbport="6433"
+dbname_archive="hms_ktph_archive"
+curr_month=$1
+curr_yr=$2
+start_time="00:00:00"
+end_time="23:59:59"
+qtr="0"
+PSQL="/export/home/gml_source/bin/psql"
+PGDUMP="/export/home/gml_source/bin/pg_dump"
+
+#############################################
+## Previous Month and Year Check
+#############################################
+
+if [ $curr_month -eq 1 ]
+        then prev_month=12
+        prev_yr=`expr $curr_yr - 1`
+        prev2_yr=$prev_yr
+        prev3_yr=$prev_yr
+elif [ $curr_month -eq 2 ]
+        then prev2_yr=`expr $curr_yr - 1`
+        prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev3_yr=$prev2_yr
+elif [ $curr_month -eq 3 ]
+        then prev3_yr=`expr $curr_yr - 1`
+        prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev2_yr=$curr_yr
+else prev_month=`expr $curr_month - 1`
+        prev_yr=$curr_yr
+        prev2_yr=$curr_yr
+        prev3_yr=$curr_yr
+fi
+
+#############################################
+## Quarter Number Check
+#############################################
+
+if (( 1 <= $prev_month && $prev_month <= 3 ))
+then
+        qtr=1
+elif (( 4 <= $prev_month && $prev_month <= 6 ))
+then
+        qtr=2
+elif (( 7 <= $prev_month && $prev_month <= 9 ))
+then
+        qtr=3
+elif (( 10 <= $prev_month && $prev_month <= 12 ))
+then
+        qtr=4
+fi
+
+############################################
+## Check Last 2 Months
+############################################
+
+if [ $prev_month -eq 1 ]
+        then prev2_month=12;
+elif [ $prev_month -eq 2 ]
+        then prev2_month=1;
+elif [ $prev_month -eq 3 ]
+        then prev2_month=2;
+else
+        prev2_month=`expr $prev_month - 1`
+fi
+
+############################################
+## Check Last 3 Months
+############################################
+
+if [ $prev_month -eq 1 ]
+        then prev3_month=11
+elif [ $prev_month -eq 2 ]
+        then prev3_month=12;
+elif [ $prev_month -eq 3 ]
+        then prev3_month=1;
+else
+        prev3_month=`expr $prev_month - 2`
+fi
+
+
+###########################################
+## Append "0" in Front of 1 Digit Months
+###########################################
+
+if [ $prev_month -lt 10 ]
+then prev_month="0"$prev_month
+fi
+
+if [ $prev2_month -lt 10 ]
+then prev2_month="0"$prev2_month
+fi
+
+if [ $prev3_month -lt 10 ]
+then prev3_month="0"$prev3_month
+fi
+
+
+############################################
+## First and Last Day Check
+############################################
+
+first_day="01"
+last_day=`cal $prev_month $prev_yr | egrep "28|29|30|31" |tail -1 |awk '{print $NF}'`
+#echo $qtr
+
+############################################
+## Archive Dated Tables Check
+############################################
+
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_labrad_result_log_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_labrad_result_log_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_labrad_result_log_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_labrad_result_log_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_bbr_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_bbr_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_activity_log_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_activity_log_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_bbr_activity_log_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_bbr_activity_log_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_details_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_details_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_bbr_details_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_bbr_details_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_scm_hl7_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_scm_hl7_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_bbr_scm_hl7_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_bbr_scm_hl7_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_hl7_raw_data_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_hl7_raw_data_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_hl7_raw_data_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_hl7_raw_data_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_clinical_messagelog_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_clinical_messagelog_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_clinical_messagelog_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_clinical_messagelog_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_crr_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_crr_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_crr_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_crr_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_messagelog_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_messagelog_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_messagelog_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_messagelog_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_labrad_result_status_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_labrad_result_status_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_labrad_result_status_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_labrad_result_status_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_labrad_result_rad_details_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_labrad_result_rad_details_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_labrad_result_rad_details_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_labrad_result_rad_details_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_sms_log_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_sms_log_$prev_yr$prev_month) AS row_count, (SELECT "created_timestamp" FROM "hms_sms_log_$prev_yr$prev_month" ORDER BY "created_timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "created_timestamp" FROM "hms_sms_log_$prev_yr$prev_month" ORDER BY "created_timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_smsstatus_log2_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_smsstatus_log2_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_smsstatus_log2_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_smsstatus_log2_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_jh_labrad_result_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_jh_labrad_result_$prev_yr$prev_month) AS row_count, (SELECT "timestamp" FROM "hms_jh_labrad_result_$prev_yr$prev_month" ORDER BY "timestamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "timestamp" FROM "hms_jh_labrad_result_$prev_yr$prev_month" ORDER BY "timestamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_labrad_result_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_labrad_result_$prev_yr$prev_month) AS row_count, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_$prev_yr$prev_month" ORDER BY "result_date_time" ASC LIMIT 1) AS firstdata_stamp, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_$prev_yr$prev_month" ORDER BY "result_date_time" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_labrad_result_details_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_labrad_result_details_$prev_yr$prev_month) AS row_count, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_details_$prev_yr$prev_month" ORDER BY "result_date_time" ASC LIMIT 1) AS firstdata_stamp, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_details_$prev_yr$prev_month" ORDER BY "result_date_time" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_labrad_result_organism_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_labrad_result_organism_$prev_yr$prev_month) AS row_count, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_organism_$prev_yr$prev_month" ORDER BY "result_date_time" ASC LIMIT 1) AS firstdata_stamp, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_organism_$prev_yr$prev_month" ORDER BY "result_date_time" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_labrad_result_sensitivity_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_labrad_result_sensitivity_$prev_yr$prev_month) AS row_count, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_sensitivity_$prev_yr$prev_month" ORDER BY "result_date_time" ASC LIMIT 1) AS firstdata_stamp, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_sensitivity_$prev_yr$prev_month" ORDER BY "result_date_time" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_bbr_labrad_result_specimen_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_bbr_labrad_result_specimen_$prev_yr$prev_month) AS row_count, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_specimen_$prev_yr$prev_month" ORDER BY "result_date_time" ASC LIMIT 1) AS firstdata_stamp, (SELECT "result_date_time" FROM "hms_bbr_labrad_result_specimen_$prev_yr$prev_month" ORDER BY "result_date_time" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_labrad_result_details_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_labrad_result_details_$prev_yr$prev_month) AS row_count, (SELECT "labrad_status_date" FROM "hms_labrad_result_details_$prev_yr$prev_month" ORDER BY "labrad_status_date" ASC LIMIT 1) AS firstdata_stamp, (SELECT "labrad_status_date" FROM "hms_labrad_result_details_$prev_yr$prev_month" ORDER BY "labrad_status_date" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_roster_entry_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_roster_entry_$prev_yr$prev_month) AS row_count, (SELECT "start_datetime" FROM "hms_roster_entry_$prev_yr$prev_month" ORDER BY "start_datetime" ASC LIMIT 1) AS firstdata_stamp, (SELECT "start_datetime" FROM "hms_roster_entry_$prev_yr$prev_month" ORDER BY "start_datetime" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_roster_entry_audit_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_roster_entry_audit_$prev_yr$prev_month) AS row_count, (SELECT "stamp" FROM "hms_roster_entry_audit_$prev_yr$prev_month" ORDER BY "stamp" ASC LIMIT 1) AS firstdata_stamp, (SELECT "stamp" FROM "hms_roster_entry_audit_$prev_yr$prev_month" ORDER BY "stamp" DESC LIMIT 1) AS lastdata_stamp;"
+$PSQL -U $dbuser -d "$dbname_archive"_"$prev_yr" -p $dbport -c "select 'hms_user_activity_$prev_yr$prev_month' AS table_name, (SELECT COUNT(1) FROM hms_user_activity_$prev_yr$prev_month) AS row_count, (SELECT "activity_date" FROM "hms_user_activity_$prev_yr$prev_month" ORDER BY "activity_date" ASC LIMIT 1) AS firstdata_activity_date, (SELECT "activity_date" FROM "hms_user_activity_$prev_yr$prev_month" ORDER BY "activity_date" DESC LIMIT 1) AS lastdata_activity_date;"
