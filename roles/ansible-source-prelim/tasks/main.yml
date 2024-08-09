@@ -1,0 +1,113 @@
+---
+#ensure gmlsource folder exists
+- name: Ensure GML Source Exists
+  file:
+    path: "{{ gml_source_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  tags:
+    - always
+
+- block:
+  - name: Checking selinux packages
+    shell: sh -c "sudo yum provides /usr/sbin/semanage"
+
+  - name: Install SELinux packages
+    shell: sh -c "sudo yum install -y {{ item }}"
+    with_items:
+      - libselinux
+      - selinux-policy
+      - selinux-policy-targeted
+      - libselinux-utils
+      - libselinux-python
+      - policycoreutils
+      - policycoreutils-python
+  tags:
+    - apache-selinux
+
+- name: Check if setools-libs is installed
+  shell: sh -c "rpm -qa | grep setools-libs-3.3.8-4.el7.x86_64"
+  register: setools_libs_check
+  failed_when: false
+  tags:
+    - setools
+    - never
+
+- name: Install setools-libs RPM dependencies
+  shell: sh -c "sudo yum install -y {{ item }}"
+  with_items:
+      - setools
+  when:
+    - setools_libs_check.rc == 1
+  tags:
+    - setools
+    - never
+
+- name: Check if setools-console is installed
+  shell: sh -c "rpm -qa | grep setools-console-3.3.8-4.el7.x86_64"
+  register: setools_console_check
+  failed_when: false
+  tags:
+    - setools
+    - never
+
+- name: Install setools-console RPM dependencies
+  shell: sh -c "sudo yum install -y {{ item }}"
+  with_items:
+      - setools
+  when:
+    - setools_console_check.rc == 1
+  tags:
+    - setools
+    - never
+
+- name: Install SELinux packages
+  shell: sh -c "sudo yum install -y {{ item }}"
+  with_items:
+    - setroubleshoot
+  tags:
+    - setools
+    - never
+
+- import_tasks: install_curl.yml
+  tags:
+    - curl
+    - install
+    - never
+
+- import_tasks: install_pcre.yml
+  tags:
+    - pcre
+    - install
+    - never
+
+- import_tasks: libzip.yml
+  tags:
+    - libzip
+    - install
+    - never
+
+- import_tasks: oniguruma.yml
+  tags:
+    - oniguruma
+    - install
+    - never
+
+- import_tasks: install_yajl.yml
+  tags:
+    - yajl
+    - install
+    - never
+
+- import_tasks: install_rsync.yml
+  tags:
+    - rsync
+    - install
+    - never
+
+#- name: restore-selinux-install-context
+#  shell: sh -c "{{ selinux_restorecon }} {{ gml_source_path }}"
+#  tags:
+#    - apache-selinux

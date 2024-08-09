@@ -1,0 +1,38 @@
+---
+- name: Ensure Curl Download Path Exist
+  file:
+    path: "{{ curl_source_clone_dir }}"
+    state: directory
+    mode: 0750
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: Download Curl Tar file
+  get_url:
+    url: "{{ curl_download_url }}"
+    dest: "{{ curl_source_clone_dir }}/{{ curl_version }}.tar.gz"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: unarchive curl 
+  unarchive:
+    src: "{{ curl_source_clone_dir }}/{{ curl_version }}.tar.gz"
+    dest: "{{ curl_source_clone_dir }}/"
+
+- name: Run configure script.
+  command: >
+    {{ php_curl_configure_command }}
+    chdir={{ curl_source_clone_dir }}/{{ curl_version }}/
+
+- name: Make and install Curl.
+  command: >
+    {{ item }}
+    chdir={{ curl_source_clone_dir }}/{{ curl_version }}/
+  with_items:
+    - make
+    - make install
+
+- name: Compress Curl file
+  archive:
+    path: "{{ curl_source_install_path }}"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ curl_gml_source_file }}"    

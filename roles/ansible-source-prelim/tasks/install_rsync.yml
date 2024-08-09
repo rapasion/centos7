@@ -1,0 +1,12 @@
+---
+- name: Check if Rsync is installed
+  shell: sh -c "rpm -qa | grep rsync"
+  register: rsync_check
+  failed_when: false
+
+- name: Install Rsync RPM dependencies
+  shell: sh -c "sudo rpm -ivh {{ item }}"
+  with_items:
+    - "{{ playbook_dir }}/downloads/rsync-3.1.2-10.el7.x86_64.rpm"
+  when: 
+    - rsync_check.rc == 1

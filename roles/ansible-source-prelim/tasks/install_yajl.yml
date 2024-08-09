@@ -1,0 +1,13 @@
+---
+
+- name: unarchive yajl file
+  unarchive:
+    src: "{{ playbook_dir }}/downloads/{{ yajl_gml_source_file }}"
+    dest: "{{ gml_source_path }}/lib/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+
+- name: Set selinux context for libyajl
+  shell: "sudo semanage fcontext -a -t lib_t '{{gml_source_path}}/lib(/.*)?'"
+  tags: apache-selinux

@@ -1,0 +1,25 @@
+---
+
+ - name: Check if Oniguruma is installed
+   shell: sh -c "rpm -qa | grep oniguruma"
+   register: onig_check
+   failed_when: false
+
+ - name: Install Oniguruma RPMs dependencies
+   shell: sh -c "sudo rpm -i {{ item }}"
+   with_items:
+     - "{{ playbook_dir }}/downloads/oniguruma-6.8.2-1.el7.x86_64.rpm"
+   when: 
+     - onig_check.rc == 1
+
+ - name: Check if Oniguruma-Devel is installed
+   shell: sh -c "rpm -qa | grep oniguruma-devel"
+   register: onig_devel_check
+   failed_when: false
+
+ - name: Install Oniguruma-Devel RPMs dependencies
+   shell: sh -c "sudo rpm -i {{ item }}"
+   with_items:
+     - "{{ playbook_dir }}/downloads/oniguruma-devel-6.8.2-1.el7.x86_64.rpm"
+   when: 
+     - onig_devel_check.rc == 1

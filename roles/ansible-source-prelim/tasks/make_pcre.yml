@@ -35,4 +35,4 @@
 - name: Compress Pcre file
   archive:
     path: "{{ pcre_source_install_path }}"
-    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ pcre_gml_source_file }}"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ pcre_gml_source_file }}"    

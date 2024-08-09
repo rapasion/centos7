@@ -1,0 +1,24 @@
+---
+ - name: Check if Libzip is installed
+   shell: sh -c "rpm -qa | grep libzip"
+   register: libzip_check
+   failed_when: false
+
+ - name: Install Libzip RPMs dependencies
+   shell: sh -c "sudo rpm -i {{ item }}"
+   with_items:
+     - "{{ playbook_dir }}/downloads/libzip-0.11.2-6.el7.psychotic.x86_64.rpm"
+   when: 
+     - libzip_check.rc == 1
+
+ - name: Check if Libzip-Devel is installed
+   shell: sh -c "rpm -qa | grep libzip-devel"
+   register: libzip_devel_check
+   failed_when: false
+
+ - name: Install Libzip-Devel RPMs dependencies
+   shell: sh -c "sudo rpm -i {{ item }}"
+   with_items:
+    - "{{ playbook_dir }}/downloads/libzip-devel-0.11.2-6.el7.psychotic.x86_64.rpm"
+   when: 
+     - libzip_devel_check.rc == 1

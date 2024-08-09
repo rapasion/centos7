@@ -1,0 +1,114 @@
+---
+- name: unarchive curl file
+  unarchive:
+    src: "{{ playbook_dir }}/downloads/{{ curl_gml_source_file }}"
+    dest: "{{ gml_source_path }}/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+
+- name: Check {{ gml_source_path }}/lib folder if exist.
+  stat:
+    path: "{{ gml_source_path }}/lib"
+  register: gml_source_lib
+
+- name: Check {{ gml_source_path }}/lib/pkgconfig folder if exist.
+  stat:
+    path: "{{ gml_source_path }}/lib/pkgconfig"
+  register: gml_source_lib_pkgconfig
+
+- name: Check {{ gml_source_path }}/include folder if exist.
+  stat:
+    path: "{{ gml_source_path }}/include"
+  register: gml_source_include
+
+- name: Check {{ gml_source_path }}/bin folder if exist.
+  stat:
+    path: "{{ gml_source_path }}/bin"
+  register: gml_source_bin
+
+- name: Create {{ gml_source_path }}/lib folder if not exist.
+  file:
+    path: "{{ gml_source_path }}/lib"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  when:
+    - not gml_source_lib.stat.exists
+
+- name: Create {{ gml_source_path }}/lib/pkgconfig folder if not exist.
+  file:
+    path: "{{ gml_source_path }}/lib/pkgconfig"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  when:
+    - not gml_source_lib_pkgconfig.stat.exists
+
+- name: Create {{ gml_source_path }}/bin folder if not exist.
+  file:
+    path: "{{ gml_source_path }}/bin"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  when:
+    - not gml_source_bin.stat.exists
+
+- name: Create {{ gml_source_path }}/include folder if not exist.
+  file:
+    path: "{{ gml_source_path }}/include"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  when:
+    - not gml_source_include.stat.exists
+
+- name: Link curl includes
+  file:
+    src: "{{ curl_source_install_path }}/include/{{ item }}"
+    dest: "{{ gml_source_path }}/include/{{ item }}"
+    state: link
+    force: yes
+  with_items:
+    - curl
+
+- name: Link curl Bin
+  file:
+    src: "{{ curl_source_install_path }}/bin/{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item }}"
+    state: link
+    force: yes
+  with_items:
+    - curl
+    - curl-config
+- name: Link Curl Files
+  file:
+    src: "{{ curl_source_install_path }}/lib/{{ item }}"
+    dest: "{{ gml_source_path }}/lib/{{ item }}"
+    state: link
+  with_items:
+    - libcurl.a
+    - libcurl.la
+    - libcurl.so
+    - libcurl.so.4
+    - libcurl.so.4.8.0
+
+- name: Link Pkg files
+  file:
+    src: "{{ curl_source_install_path }}/lib/pkgconfig/{{ item }}"
+    dest: "{{ gml_source_path }}/lib/pkgconfig/{{ item }}"
+    state: absent
+  with_items:
+    - libcurl.pc
+
+- name: Set selinux context for curl
+  shell: "sudo semanage fcontext -a -t bin_t '{{ gml_source_path }}/{{curl_version}}/bin(/.*)?'"
+  tags: apache-selinux
+
+- name: Set selinux context for curl libs
+  shell: "sudo semanage fcontext -a -t lib_t '{{ gml_source_path }}/{{curl_version}}/lib(/.*)?'"
+  tags: apache-selinux
