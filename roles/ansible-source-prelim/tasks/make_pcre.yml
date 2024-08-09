@@ -1,0 +1,38 @@
+---
+- name: Ensure pCRE Download Path Exist
+  file:
+    path: "{{ pcre_source_clone_dir }}"
+    state: directory
+    mode: 0750
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: pcre3 source file
+  get_url:
+    url: "{{ pcre_download_url }}"
+    dest: "{{ pcre_source_clone_dir }}/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: unarchive pcre3
+  unarchive:
+    src: "{{ pcre_source_clone_dir }}/{{ pcre_version }}.tar.gz"
+    dest: "{{ pcre_source_clone_dir }}/"
+
+- name: Run configure script.
+  command: >
+    {{ php_pcre3_upgrade_command }}
+    chdir={{ pcre_source_clone_dir }}/{{ pcre_version }}/
+
+- name: Make and install Pcre.
+  command: >
+    {{ item }}
+    chdir={{ pcre_source_clone_dir }}/{{ pcre_version }}/
+  with_items:
+    - make
+    - make install
+
+- name: Compress Pcre file
+  archive:
+    path: "{{ pcre_source_install_path }}"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ pcre_gml_source_file }}"
