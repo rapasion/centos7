@@ -1,0 +1,10 @@
+[Unit]
+Description=Everyday at 03:30 {{ hospital }} web cache clear
+Wants=web_backup.timer
+
+[Service]
+User={{ code_user }}
+ExecStart=/usr/bin/bash {{ script_location }}{{ web_cache_clear_script }}
+
+[Install]
+WantedBy=multi-user.target

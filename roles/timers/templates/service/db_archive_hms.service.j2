@@ -1,0 +1,10 @@
+[Unit]
+Description= Run {{ hospital }} HMS Archive Dump script every 1st of the Month - 23:00
+Wants=db_archive_hms_{{ hospital }}.timer
+
+[Service]
+User=hmsdba
+ExecStart=/usr/bin/bash -c '{{ script_location }}Archive_Dump_HMS_{{ hospital }}.sh > {{ backup_log_path }}{{ db_archive_log }} 2>&1'
+
+[Install]
+WantedBy=multi-user.target

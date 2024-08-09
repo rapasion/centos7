@@ -1,0 +1,10 @@
+[Unit]
+Description= Everyday at 22:30 {{ hospital }} HMS DB data restoration
+Wants=db_restore_{{ hospital }}.timer
+
+[Service]
+User=hmsdba
+ExecStart=/usr/bin/bash -c '{{ script_location }}db_pg_restore_{{ hospital }}.sh > {{ backup_log_path }}{{ db_restore_log }} 2>&1'
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description= Everyday at 22:00 {{ hospital }}  HMS DB data dump transfer to mounted drive
+Wants=db_move_dump_{{ hospital }}.timer
+
+[Service]
+User=hmsdba
+ExecStart=/usr/bin/bash -c '{{ script_location }}db_move_dump_{{ hospital }}.sh > {{ backup_log_path }}{{ db_move_log }} 2>&1 '
+
+[Install]
+WantedBy=multi-user.target

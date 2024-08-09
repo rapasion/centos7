@@ -1,0 +1,10 @@
+[Unit]
+Description=Everyday at 21:30 {{ hospital }} web backup
+Wants=web_backup.timer
+
+[Service]
+User={{ code_user }}
+ExecStart=/usr/bin/bash {{ script_location }}{{ web_code_backup_script }}
+
+[Install]
+WantedBy=multi-user.target

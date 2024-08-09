@@ -1,0 +1,10 @@
+[Unit]
+Description=DB Backup Script
+Wants=db_backup_{{ hospital }}.timer
+
+[Service]
+User=hmsdba
+ExecStart=/usr/bin/bash -c '{{ script_location }}{{ db_backup_script }} > {{ backup_log_path }}{{ db_backup_log }} 2>&1'
+
+[Install]
+WantedBy=multi-user.target

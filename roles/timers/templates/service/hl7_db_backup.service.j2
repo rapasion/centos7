@@ -1,0 +1,10 @@
+[Unit]
+Description=Everyday at 21:30 {{ cluster }} HL7 DB dump
+Wants=hl7_db_backup.timer
+
+[Service]
+User=hmsdba
+ExecStart=/usr/bin/bash -c '{{ script_location }}{{ hl7_db_backup_script }} > {{ backup_log_path }}{{ hl7_db_backup_log }} 2>&1'
+
+[Install]
+WantedBy=multi-user.target
