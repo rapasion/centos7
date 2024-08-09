@@ -1,0 +1,30 @@
+#!/bin/bash
+{% if server == 'db' %}
+DB={{ db_name }}
+USER=hmsdba
+PATH={{ db_backup_dir }}
+FILE={{ db_backup_file }}
+
+{{ db_pgsql_location }}pg_dump -v -U $USER $DB -p{{ db_port }} | /usr/bin/gzip -c > $PATH/$FILE
+{% endif %}
+
+{% if cluster != 'jhs' and server == 'hl7_db' %}
+DB={{ hl7_db_name }}
+USER=hmsdba
+PATH={{ db_backup_dir }}
+FILE=hmshl7_{{ hospital }}_db_backup.gz
+
+{{ db_pgsql_location }}pg_dump -v -U $USER $DB -p{{ hl7_db_port }} | /usr/bin/gzip -c > $PATH/$FILE
+{% endif %}
+
+{% if encrypted_db is defined and encrypted_db == 'true' %}
+
+# Encrypt DB Dump
+#/bin/openssl enc -e -aes256 -md sha256 -in $PATH/$FILE -out $PATH/enc_$FILE -k $PASS
+
+# Encrypt DB Dump
+/usr/bin/cat {{ gml_password_file }} | /usr/bin/openssl enc -aes-256-cbc -salt -in $PATH/$FILE -out $PATH/enc_$FILE -pass stdin
+/bin/rm -f $PATH/$FILE
+{% endif %}
+
+exit 0
