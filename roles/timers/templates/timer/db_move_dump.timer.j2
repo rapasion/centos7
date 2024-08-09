@@ -1,0 +1,9 @@
+[Unit]
+Description=Run DB dump transfer service to mounted drive at 22:00
+
+[Timer]
+Unit=db_move_dump_{{ hospital }}.service
+OnCalendar=*-*-* 22:00:00
+
+[Install]
+WantedBy=timers.target

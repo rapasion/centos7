@@ -1,0 +1,9 @@
+[Unit]
+Description=Run {{ hospital }} HMS DB data restore service everyday at 22:30
+
+[Timer]
+Unit=db_backup_restore_{{ hospital }}.service
+OnCalendar=*-*-* 22:30:00
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,9 @@
+[Unit]
+Description=Run {{ hospital }} HMS Archive Dump service every 1st of the Month - 23:00
+
+[Timer]
+Unit=db_archive_hms_{{ hospital }}.service
+OnCalendar=*-*-1 23:00:00
+
+[Install]
+WantedBy=timers.target

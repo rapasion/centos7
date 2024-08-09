@@ -1,0 +1,9 @@
+[Unit]
+Description=Run {{ hospital }} app backup service everyday at 21:30
+
+[Timer]
+Unit=app_backup_{{ hospital }}.service
+OnCalendar=*-*-* 21:30:00
+
+[Install]
+WantedBy=timers.target

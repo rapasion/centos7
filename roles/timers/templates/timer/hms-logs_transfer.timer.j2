@@ -1,0 +1,10 @@
+[Unit]
+Description= Everyday at 23:59 HMS logs transfer script will run.
+
+[Timer]
+Unit=hms-logs_transfer.service
+OnCalendar=*-*-* 23:59:00
+
+
+[Install]
+WantedBy=timers.target

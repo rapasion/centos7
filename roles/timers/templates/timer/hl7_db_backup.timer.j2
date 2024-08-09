@@ -1,0 +1,9 @@
+[Unit]
+Description=Run hl7 DB backup service everyday at 21:30
+
+[Timer]
+Unit=hl7_db_backup.service
+OnCalendar=*-*-* 21:30:00
+
+[Install]
+WantedBy=timers.target

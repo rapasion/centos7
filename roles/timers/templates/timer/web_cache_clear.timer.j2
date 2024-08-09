@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Web Cache Clear service everyday at 03:00
+
+[Timer]
+Unit=web_cache_clear_{{ hospital }}.timer
+OnCalendar=*-*-* 03:00:00
+
+[Install]
+WantedBy=timers.target

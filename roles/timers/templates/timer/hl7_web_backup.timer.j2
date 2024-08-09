@@ -1,0 +1,9 @@
+[Unit]
+Description=Run hl7 web backup service everyday at 21:30
+
+[Timer]
+Unit=hl7_web_backup_{{ cluster }}.service
+OnCalendar=*-*-* 21:30:00
+
+[Install]
+WantedBy=timers.target
