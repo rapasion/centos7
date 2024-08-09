@@ -1,0 +1,88 @@
+---
+gml_source_path: "/export/home/gml_source"
+compressed_dir: "downloads"
+httpd_source_bin: "{{ gml_source_path }}/apache{{ httpd_version }}/bin/httpd"
+apr_source_url: "https://dlcdn.apache.org/apr/"
+apr_source_version: "apr-1.7.4"
+apr_source_checksum: "sha256:a4137dd82a185076fa50ba54232d920a17c6469c30b0876569e1c2a05ff311d9"
+apr_util_source_version: "apr-util-1.6.3"
+apr_util_source_checksum: "sha256:2b74d8932703826862ca305b094eef2983c27b39d5c9414442e9976a9acf1983"
+httpd_installer_dir: "/export/home/hms/httpd-src/"
+httpd_install_path: "{{ gml_source_path }}/apache{{ httpd_version }}"
+httpd_source_url: "http://archive.apache.org/dist/httpd/{{ httpd_source_version }}.tar.gz"
+httpd_source_version: "httpd-{{ httpd_version }}"
+pcre_version: pcre-8.43
+pcre_source_install_path: "{{ gml_source_path }}/{{ pcre_version }}"
+httpd_source_configure_command: >
+  ./configure
+  --prefix={{ gml_source_path }}/apache{{ httpd_version }}
+  --sysconfdir={{ gml_source_path }}/conf/apache
+  --enable-mpms-shared=all
+  --with-included-apr
+  --enable-so
+  --enable-watchdog
+  --enable-ssl
+  --with-pcre={{ pcre_source_install_path }}
+gml_source_httpd_file: "export_gml_source_{{ httpd_source_version }}.tar.gz"
+
+#httpd_version_number: "2.4.53"
+
+# update vars
+backup_dir: "{{ gml_source_path }}/backupdir/"
+
+deploy_mod_security: false
+php_fpm_sockdir: "{{ gml_source_path }}/run/php-fpm"
+
+http_on: "false"
+https_on: "true"
+
+#apache_user: "daemon"
+apache_user: "apache"
+
+httpd_listen_ports:
+  - ip: "{{ ansible_default_ipv4.address }}"
+    port: 443
+  - ip: "{{ ansible_default_ipv4.address }}"
+    port: 8010
+
+install_from_source: false
+deploy_from_zip: true
+
+remote_user: "{{ code_user }}"
+
+sslcert: gml_selfsigned
+https_db_port: 8443
+https_hl7_port: 8010
+
+gml_source_apache_ssl_add_conf_path: "{{ gml_source_path }}/conf/apache/extra/https"
+conf_apachelog_dir: "{{ gml_source_path }}/logs/apache"
+gml_ssl_error_log: "{{ ansible_hostname }}_ssl_error_log"
+gml_ssl_access_log: "{{ ansible_hostname }}_ssl_access_log"
+gml_ssl_request_log: "{{ ansible_hostname }}_ssl_request_log"
+pgtool_path: "{{ gml_source_path }}/conf/pgtool"
+conf_ssl_directory: "{{ gml_source_path }}/ssl"
+
+server_type: ""
+
+htdocs_code_dir: "{{ hms_dir }}/{{ institution }}/htdocs"
+server_logs_dir: "{{ hms_dir }}/{{ institution }}/logs/"
+
+#docroot_hl7: /export/home/hms/jhc/htdocs
+#docroot_logs: /export/home/hms/jhc/logs
+
+#httpd_aliases:
+#  - name: jhs-logs
+#    directory: "{{ docroot_logs }}"
+#    grant: "true"
+
+gml_source_apache_ssl_conf_path: "{{ gml_source_path }}/conf/apache/extra/httpd-ssl.conf"
+
+generic_cert: hmsgeneric.nhg.local.cer
+generic_key: hmsgeneric.nhg.local.key
+
+gml_source_apache_conf_path: "{{ gml_source_path }}/conf/apache/httpd.conf"
+
+gml_source_modsecurity_conf_path: '{{ gml_source_path }}/conf/modsecurity2'
+installer_dir: '{{ playbook_dir }}/downloads/'
+coreruleset_version: 3.3.2
+gml_source_apache_log: '{{ gml_source_path }}/logs/apache'
