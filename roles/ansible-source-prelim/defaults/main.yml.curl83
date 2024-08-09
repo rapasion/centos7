@@ -1,0 +1,29 @@
+gml_source_path: "/export/home/gml_source"
+code_user: gmlops1
+
+php_curl_configure_command: >
+  ./configure
+  --prefix={{ curl_source_install_path }}
+  --with-openssl
+curl_version: curl-7.83.1
+download_source_dir: "/export/home/hmsops/tmp"
+curl_source_clone_dir: "{{ download_source_dir }}/curl-src"
+curl_source_install_path: "{{ gml_source_path }}/{{ curl_version }}"
+curl_download_url: https://curl.se/download/{{ curl_version }}.tar.gz
+install_curl: true
+
+php_pcre3_upgrade_command: >
+  ./configure
+  --prefix={{ pcre_source_install_path }}
+  --enable-jit
+install_pcre: true
+pcre_version: pcre-8.43
+pcre_source_clone_dir: "{{ download_source_dir  }}/pcre-src"
+pcre_source_install_path: "{{ gml_source_path }}/{{ pcre_version }}"
+pcre_download_url: "https://ftp.pcre.org/pub/pcre/{{ pcre_version }}.tar.gz"
+remote_user: "{{ code_user }}"
+
+compressed_dir: "downloads"
+curl_gml_source_file: export_gml_source_curl_7_83_1.tar.gz
+pcre_gml_source_file: export_gml_source_pcre_8_43.tar.gz
+yajl_gml_source_file: export_gml_source_yajl_v1.1.tar.gz
