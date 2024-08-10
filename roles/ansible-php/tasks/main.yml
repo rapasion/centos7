@@ -1,0 +1,56 @@
+---
+- name: Installation from Source Block
+  block:
+  # Install PHP from source when php_install_from_source is true.
+    - import_tasks: install-from-source.yml
+
+  # Install libmemcache 
+    - import_tasks: configure-libmemcache.yml
+      tags:
+        - libmemcache
+        - never
+  
+  # Install memcache
+    - import_tasks: configure-memcache.yml
+      tags:
+        - memcache
+
+  # Compress PHP installation
+    - import_tasks: compress-php.yml
+
+  tags:
+    - install_from_source
+    - never
+  become: yes
+  become_method: sudo
+  become_user: root
+
+# Deployment Block
+- name: Deployment Block
+  block:
+  - import_tasks: deploy-php.yml
+  - import_tasks: configure.yml
+  - import_tasks: configure-opcache.yml
+  - import_tasks: configure-fpm.yml
+  - import_tasks: enable-memcached.yml
+    tags: 
+      - memcached
+  tags:
+    - install
+
+# Upgrade PHP Version
+- import_tasks: upgrade.yml
+  tags:
+    - upgrade
+    - never
+
+# Deploy startup scripts
+- import_tasks: startup.yml
+  tags:
+    - startup
+    - never
+
+- name: restore-selinux-install-context
+  shell: sh -c "{{ selinux_restorecon }} {{ gml_source_path }}"
+  tags:
+    - apache-selinux

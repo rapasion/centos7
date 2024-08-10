@@ -1,0 +1,42 @@
+---
+
+# Install Block
+- name: Installation Block
+  block:
+    - name: Ensure configuration directories exist.
+      file:
+        path: "{{ item }}"
+        state: directory
+        follow: true
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+      with_flattened:
+        - "{{ php_conf_paths }}"
+        - "{{ php_extension_conf_paths }}"
+
+    - name: Check for files in the php_extension_conf directory
+      find:
+        paths: "{{ php_extension_conf_paths }}"
+      register: files_to_delete
+
+    - name: Remove existing files in php_extension_conf directory
+      file:
+        path: "{{item.path}}"
+        state: absent
+      with_items: "{{ files_to_delete.files }}"
+  tags:
+    - install
+    - never
+
+# Config tag
+- name: Place PHP configuration file in place.
+  template:
+    src: php.ini.j2
+    dest: "{{ item }}/php.ini"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: 0644
+  with_items: "{{ php_conf_paths }}"
+  notify: restart webserver
+  tags:
+    - config_php_ini

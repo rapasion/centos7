@@ -1,0 +1,177 @@
+---
+
+- name: Ensure epel-release is are installed (RedHat).
+  package:
+    name:
+      - epel-release
+    state: present
+  when: ansible_os_family == 'RedHat'
+  
+- name: Ensure dependencies for building from source are installed (RedHat).
+  package:
+    name:
+      - autoconf
+      - automake
+      - libtool
+      - bison
+      - make
+    #  - curl-devel
+      - recode-devel
+      - aspell-devel
+      - libxml2-devel
+      - pkgconfig
+      - libmcrypt-devel
+      - t1lib-devel
+      - libXpm-devel
+      - libpng-devel
+      - libjpeg-turbo-devel
+      - bzip2-devel
+      - openssl-devel
+      - freetype-devel
+      - libicu-devel
+      - mariadb-devel
+      - gmp-devel
+      - oniguruma
+      - oniguruma-devel
+      - postgresql-devel
+      - sqlite-devel
+      - libcurl-devel  
+      - libevent 
+      - libevent-devel
+      - openldap
+      - openldap-devel 
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Update apt cache (Debian).
+  apt: update_cache=yes cache_valid_time=86400
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure dependencies for building from source are installed (Debian).
+  apt:
+    name:
+      - build-essential
+      - autoconf
+      - automake
+      - libtool
+      - bison
+      - pkg-config
+      - re2c
+      - libxml2-dev
+      - libcurl4-openssl-dev
+      - libbz2-dev
+      - libjpeg-dev
+      - libpng-dev
+      - libxpm-dev
+      - libfreetype6-dev
+      - libgmp3-dev
+      - libmcrypt-dev
+      - libmysqlclient-dev
+      - libpspell-dev
+      - librecode-dev
+      - libssl-dev
+      - openldap
+      - openldap-devel
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure libzip is installed
+  yum: 
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ playbook_dir }}/downloads/gcc-c++-4.8.5-44.el7.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/libzip-0.11.2-6.el7.psychotic.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/libzip-devel-0.11.2-6.el7.psychotic.x86_64.rpm"
+
+- name: Install libjpeg RPMs dependencies
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ playbook_dir }}/downloads/libjpeg-turbo-devel-1.2.90-8.el7.x86_64.rpm"
+
+- name: Define php_fpm_daemon (if not defined already).
+  set_fact:
+    php_fpm_daemon: "php-fpm"
+  when: php_fpm_daemon is not defined
+
+- name: Check if gmp.h is already in a location accessible to gcc.
+  stat: path=/usr/include/gmp.h
+  register: gmp_file
+
+- name: Ensure gmp.h is symlinked into a location accessible to gcc.
+  file:
+    src: "{{ php_source_install_gmp_path }}"
+    dest: /usr/include/gmp.h
+    state: link
+  when: not gmp_file.stat.exists
+
+- name: Check if PHP is installed.
+  command: which php
+  changed_when: false
+  failed_when: false
+  register: php_installed
+
+#- name: Clone the PHP repository.
+#  git:
+#    repo: "{{ php_source_repo }}"
+#    dest: "{{ php_source_clone_dir }}"
+#    version: "{{ php_source_version }}"
+#    accept_hostkey: true
+#    depth: "{{ php_source_clone_depth }}"
+
+- name: Check if PHP installation dir exists.
+  stat:
+    path: "{{ php_source_clone_dir }}"
+  register: php_source_clone_folder
+
+- debug: var=php_source_clone_dir
+
+- name: Create directory for PHP installer if it does not exist
+  file:
+    path: "{{ php_source_clone_dir }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  when: not php_source_clone_folder.stat.exists
+
+- name: Download latest stable version of PHP
+  get_url:
+    url: "{{ php_source_url }}{{ php_source_version }}.tar.gz"
+    dest: "{{ php_source_clone_dir }}"
+    validate_certs: false
+
+- name: Extract downloaded PHP tar.gz file
+  unarchive:
+    src: "{{ php_source_clone_dir }}{{ php_source_version }}.tar.gz"
+    dest: "{{ php_source_clone_dir }}"
+    remote_src: yes
+
+- name: Ensure PHP installation path exists.
+  file:
+    path: "{{ php_source_install_path }}"
+    state: directory
+    mode: "0750"
+
+- name: Build configure script.
+  command: >
+    ./buildconf --force
+    chdir={{ php_source_clone_dir }}/{{ php_source_version }}
+
+- name: Run configure script.
+  command: >
+    {{ php_source_configure_command }}
+    chdir={{ php_source_clone_dir }}/{{ php_source_version }}
+
+#- name: Remove libcurl-devel rpm
+#  shell: sh -c "sudo rpm -e libcurl-devel-7.29.0-59.el7_9.1.x86_64"
+
+- name: Make and install PHP.
+  command: >
+    {{ item }}
+    chdir={{ php_source_clone_dir }}/{{ php_source_version }}
+  with_items:
+    - "{{ php_source_make_command }}"
+    - make install

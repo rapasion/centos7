@@ -1,0 +1,91 @@
+---    
+- name: Extract Memcached and LibMemcache tar.gz file
+  unarchive:
+    src: "{{ playbook_dir }}/downloads/{{ item }}"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    dest: "{{ gml_source_path }}/"
+    remote_src: yes
+  with_items:
+    - "{{ php_memcached_file }}"
+    - "{{ php_libmemcached_file }}"
+  tags: 
+    - memcached
+    - install
+
+- name: Set selinux context for libmemcached
+  shell: "sudo semanage fcontext -a -t lib_t '{{gml_source_path}}/{{libmemcached_source_version}}/lib(/.*)?'"
+  tags: apache-selinux
+
+- name: Set selinux context for php_memcached
+  shell: "sudo semanage fcontext -a -t lib_t '{{gml_source_path}}/{{memcached_source_version}}/lib(/.*)?'"
+  tags: apache-selinux
+
+- name: Copy Memcached ini
+  copy:
+    src: "{{ gml_source_path }}/{{ memcached_source_version }}/memcached.ini"
+    dest: "{{ php_source_config_path }}/php.d//memcached.ini"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    remote_src: yes
+  tags: 
+    - memcached
+    - install
+
+- name: Set selinux context for memcached ini
+  shell: "sudo semanage fcontext -a -t etc_t '{{ php_source_config_path }}/php.d//memcached.ini'"
+  tags: apache-selinux
+
+- name: Enable Memcached in php.ini
+  lineinfile:
+    dest: "{{ php_fpm_conf_path }}/php.ini"
+    regexp: "^extension"
+    insertafter: "^;extension"
+    line: 'extension = memcached.so'
+  tags: 
+    - memcached
+    - install
+
+- name: Find location of memcached.so
+  shell: "find {{ php_source_install_path }} -name memcached.so"
+  changed_when: false
+  failed_when: false
+  register: memcached_so_location
+
+- name: Set selinux context for memcached.so
+  shell: "sudo semanage fcontext -a -t lib_t '{{memcached_so_location.stdout}}'"
+  tags: 
+    - apache-selinux
+
+- name: Check if libevent is installed
+  command: 'rpm -q libevent'
+  ignore_errors: true
+  register: libevent 
+
+- name: Extract Memcached Server Component
+  unarchive:
+    src: "{{ playbook_dir }}/downloads/{{ memcached_bin_file }}"
+    dest: "{{ gml_source_path }}/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  tags: 
+    - memcached
+    - install
+
+- name: Ensure php executable is symlinked into a standard path.
+  file:
+    src: "{{ gml_source_path }}/memcached/bin/memcached"
+    dest: "{{ gml_source_path }}/bin/memcached"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  tags: 
+    - symlink
+
+- name: Set selinux context for memcached server component
+  shell: "sudo semanage fcontext -a -t bin_t '{{gml_source_path}}/memcached/bin/memcached'"
+  tags: apache-selinux
+
+

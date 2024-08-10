@@ -1,0 +1,10 @@
+---
+- name: Create Compress Dir if not exist.
+  file:
+    state: directory
+    path: "{{ playbook_dir }}/{{ compressed_dir }}"
+
+- name: Compress php Installation Directory
+  archive:
+    path: "{{ php_source_install_path }}"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ gml_source_php_file }}"

@@ -1,0 +1,130 @@
+---
+
+- name: Installation Block
+  block: 
+    - name: Ensure php-fpm log directory exists.
+      file:
+        path: "{{ php_fpm_logdir }}"
+        state: directory
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: 0750
+        recurse: yes
+
+    - name: Ensure php-fpm config directory exists.
+      file:
+        path: "{{ php_fpm_conf_path }}"
+        state: directory
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: 0750
+
+    - name: Ensure php-fpm socket directory exists.
+      file:
+        path: "{{ php_fpm_sockdir }}"
+        state: directory
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: 0750
+
+    - name: Ensure the default pool directory exists.
+      file:
+        path: "{{ php_fpm_pool_conf_path }}"
+        state: directory
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: "0750"
+
+    - name: Ensure php-fpm directory exists
+      file:
+        path: "{{ gml_source_path }}/logs/php-fpm"
+        state: directory
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: "0750"
+
+    - name: Ensure startup directory exists
+      file:
+        path: "{{ gml_startup_dir }}"
+        state: directory
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: "0750"
+  tags:
+    - install
+    - never
+    
+- name: Ensure php-fpm config file is installed.
+  template:
+    src: php-fpm.conf.j2
+    dest: "{{ php_fpm_conf_path }}/php-fpm.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: 0644
+  notify: restart php-fpm
+  tags: config_php
+  when: cluster != "jhs"
+
+- name: Ensure php-fpm config file is installed.(JHS)
+  template:
+    src: php-fpm_jhs.conf.j2
+    dest: "{{ php_fpm_conf_path_jhs }}/php-fpm.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: 0644
+  notify: restart php-fpm
+  tags: config_php
+  when: cluster == "jhs"
+
+- name: Config Block
+  block: 
+#    - name: Deploy main php-fpm config
+#      template:
+#        src: php-fpm.conf.j2
+#        dest: "{{ php_fpm_conf_path }}/php-fpm.conf"
+#        owner: "{{ code_user }}"
+#        group: "{{ code_user }}"
+#        mode: 0644
+#      notify: 
+#        - restart php-fpm
+
+    - name: Deploy php-fpm pool config
+      template:
+        src: vhostname-0.conf.j2
+        dest: "{{ php_fpm_pool_conf_path }}/vhostname-0.conf"
+        owner: "{{ code_user }}"
+        group: "{{ code_user }}"
+        mode: 0644
+        force: false
+      notify: 
+        - restart php-fpm
+  tags: 
+    - config_php_pool
+
+- name: Deploy php-fpm pool config (FRONTEND)
+  template:
+    src: frontend.conf.j2
+    dest: "{{ php_fpm_pool_conf_path }}/frontend.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: 0640
+    force: false
+  notify: 
+    - restart php-fpm
+  tags: 
+    - config_php
+    - config_php_frontend
+
+- name: Deploy php-fpm pool config (BACKEND)
+  template:
+    src: backend.conf.j2
+    dest: "{{ php_fpm_pool_conf_path }}/backend.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: 0640
+    force: false
+  notify: 
+    - restart php-fpm
+  tags: 
+    - config_php
+    - config_php_backend

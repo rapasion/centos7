@@ -1,0 +1,25 @@
+---
+
+- name: Download latest stable version of LibMemcached
+  get_url:
+    url: "{{ libmemcached_source_url }}{{ libmemcached_source_version }}.tar.gz"
+    dest: "{{ php_source_clone_dir }}"
+
+- name: Extract downloaded libmemcached tar.gz file
+  unarchive:
+    src: "{{ php_source_clone_dir }}{{ libmemcached_source_version }}.tar.gz"
+    dest: "{{ php_source_clone_dir }}"
+    remote_src: yes
+
+- name: Run configure script.
+  command: >
+    {{ libmemcached_configure_command }}
+    chdir={{ php_source_clone_dir }}/{{ libmemcached_source_version }}
+
+- name: Make and install PHP.
+  command: >
+    {{ item }}
+    chdir={{ php_source_clone_dir }}/{{ libmemcached_source_version }}
+  with_items:
+    - make
+    - make install
