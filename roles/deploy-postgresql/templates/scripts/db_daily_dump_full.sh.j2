@@ -1,0 +1,20 @@
+#!/bin/bash
+export PGBACKREST_LOG_LEVEL_CONSOLE=info
+{% if server == 'db' %}
+export PGBACKREST_STANZA={{ db_name }}
+{% endif %}
+{% if server == 'hl7' %}
+export PGBACKREST_STANZA={{ db_hl7_name }}
+{% endif %}
+export PGBACKREST_LOG_PATH={{ pgbackrest_log }}
+export PGBACKREST_CONFIG={{ pgsql_config_path }}/pgbackrest.conf
+export PATH=/export/home/gml_source/bin:$PATH
+
+{% if server == 'db' %}
+pgbackrest --type=full --stanza={{ db_name }} backup
+{% endif %}
+{% if server == 'hl7' %}
+pgbackrest --type=full --stanza={{ db_hl7_name }} backup
+{% endif %}
+
+exit 1

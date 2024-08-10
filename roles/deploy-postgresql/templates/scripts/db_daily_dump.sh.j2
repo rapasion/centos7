@@ -1,1 +1,9 @@
-dsd
+#!/bin/bash
+DB={{ db_name }}
+USER={{ db_user }}
+PATH={{ db_backup_dir }}
+FILE={{ db_backup_file }}
+
+{{ db_pgsql_location }}pg_dump -v -U $USER $DB -p{{ db_port }} | /usr/bin/gzip -c > $PATH/$FILE
+
+exit 1

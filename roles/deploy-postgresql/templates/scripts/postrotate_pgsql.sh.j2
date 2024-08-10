@@ -1,0 +1,7 @@
+#!/bin/sh
+{% if cluster == 'jhs' %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_archive_pgsql_log_backup_dir }} \;
+{% else %}
+find {{ pgsql_log_path }} -maxdepth 1 -name 'postgresql-*' -mtime +7 -type f -exec mv "{}" {{ shared_drive_pgsql_log_backup_dir }} \;
+{% endif %}
+exit 1
