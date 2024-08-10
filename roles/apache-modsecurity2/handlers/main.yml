@@ -1,0 +1,6 @@
+---
+- name: restart webserver
+  shell: sh -c "{{ sh_httpd_restart }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
