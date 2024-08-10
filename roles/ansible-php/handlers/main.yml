@@ -1,0 +1,21 @@
+---
+- name: restart webserver
+  shell: sh -c "{{ sh_httpd_restart }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  when: php_enable_webserver
+
+#- name: restore selinux context
+#  shell: sh -c "sudo restorecon -Rv {{gml_source_path}}"
+#  tags:
+#    - apache-selinux
+
+- name: restart php-fpm
+  shell: sh -c "{{ sh_fpm_start }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  when:
+    - php_enable_php_fpm
+    - php_fpm_state == 'started'
