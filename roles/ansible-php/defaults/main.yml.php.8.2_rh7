@@ -3,7 +3,7 @@
 # for RHEL/CentOS.
 php_enablerepo: ""
 gml_source_path: "/export/home/gml_source"
-php_version_number: "8.0.28"
+php_version_number: "8.2.6"
 #httpd_version_number: "2.4.53"
 php_install_from_source: false
 
@@ -59,7 +59,6 @@ php_apc_conf_filename: 50-apc.ini
 php_opcache_conf_filename: 10-opcache.ini
 php_fpm_daemon: php-fpm
 php_fpm_conf_path: "{{ gml_source_path }}/conf/php"
-php_fpm_conf_path_jhs: "{{ gml_source_path }}/conf/php7"
 php_fpm_pool_conf_path: "{{ php_fpm_conf_path }}//php-fpm.d/"
 php_conf_paths: "{{ php_fpm_conf_path }}"
 php_extension_conf_paths: "{{ php_fpm_conf_path }}/php.d"
@@ -80,11 +79,6 @@ php_fpm_pm_min_spare_servers: 20
 php_fpm_pm_max_spare_servers: 80
 php_fpm_pm_max_requests: 500
 php_fpm_request_terminate_timeout: 900
-
-front_php_fpm_listen: "{{ php_fpm_sockdir }}/php-fcgi-onramp.sock"
-front_error_log: "{{ gml_source_path }}/logs/php-fpm/frontend_error.log"
-back_php_fpm_listen: "{{ php_fpm_sockdir }}/php-fcgi-htdocs.sock"
-back_error_log: "{{ gml_source_path }}/logs/php-fpm/backend_error.log"
 
 # The executable to run when calling PHP from the command line.
 php_executable: "php"
@@ -140,7 +134,7 @@ php_session_gc_maxlifetime: 1440
 php_session_save_handler: files
 php_session_save_path: ''
 
-php_error_reporting: "E_ALL & ~E_DEPRECATED & ~E_STRICT"  
+php_error_reporting: "E_ALL & ~E_DEPRECATED & ~E_STRICT"
 php_display_errors: "Off"
 php_display_startup_errors: "Off"
 
@@ -149,7 +143,8 @@ php_source_repo: "https://git.php.net/repository/php-src.git"
 php_source_url: "https://www.php.net/distributions/"
 php_source_version: "php-{{ php_version_number }}"
 # php_source_checksum: "sha256:c0c657b5769bc463f5f028b1f4fef8814d98ecf3459a402a9e30d41d68b2323e"
-php_source_clone_dir: "/export/home/hms/hmsops/php-src/"
+download_source_dir: "/export/home/hmsops/tmp"
+php_source_clone_dir: "{{ download_source_dir }}/php-src/"
 php_source_clone_depth: 1
 php_source_install_path: "{{ gml_source_path }}/{{ php_source_version }}"
 php_source_pgsql_path: "{{ gml_source_path }}/postgres/12-gml"
@@ -161,53 +156,50 @@ php_source_install_gmp_path: "/usr/include/x86_64-linux-gnu/gmp.h"
 php_source_make_command: "make"
 php_source_configure_command: >
   ./configure
-  --prefix={{ php_source_install_path }} 
-  --exec-prefix={{ php_source_install_path }} 
-  --datadir={{ php_source_install_path }}/share 
-  --sysconfdir={{ php_source_install_path }}/etc 
-  --mandir={{ php_source_install_path }}/man 
-  --includedir={{ php_source_install_path }}/include 
-  --sharedstatedir={{ php_source_statedir_path }} 
-  --localstatedir={{ php_source_statedir_path }} 
-  --sysconfdir={{ php_source_config_path }} 
-  --docdir={{ php_source_install_path }}/doc 
-  --bindir={{ php_source_install_path }}/bin 
-  --libexecdir={{ php_source_install_path }}/bin 
-  --sbindir={{ php_source_install_path }}/bin 
-  --libdir={{ php_source_install_path }}/lib 
-  --with-apxs2={{ php_source_apxs_path }}/apxs 
-  --with-config-file-path={{ php_source_config_path }} 
-  --with-config-file-scan-dir={{ php_source_config_path }}/php.d/ 
+  --prefix={{ php_source_install_path }}
+  --exec-prefix={{ php_source_install_path }}
+  --datadir={{ php_source_install_path }}/share
+  --sysconfdir={{ php_source_install_path }}/etc
+  --mandir={{ php_source_install_path }}/man
+  --includedir={{ php_source_install_path }}/include
+  --sharedstatedir={{ php_source_statedir_path }}
+  --localstatedir={{ php_source_statedir_path }}
+  --sysconfdir={{ php_source_config_path }}
+  --docdir={{ php_source_install_path }}/doc
+  --bindir={{ php_source_install_path }}/bin
+  --libexecdir={{ php_source_install_path }}/bin
+  --sbindir={{ php_source_install_path }}/bin
+  --libdir={{ php_source_install_path }}/lib
+  --with-apxs2={{ php_source_apxs_path }}/apxs
+  --with-config-file-path={{ php_source_config_path }}
+  --with-config-file-scan-dir={{ php_source_config_path }}/php.d/
   --with-curl={{ curl_source_install_path }}
-  --with-zlib=/usr 
+  --with-zlib=/usr
   --with-pgsql={{ php_source_pgsql_path }}/bin/
   --with-pdo-pgsql={{ php_source_pgsql_path }}/bin/
-  --with-openssl 
-  --with-pear 
-  --with-bz2 
-  --with-mysqli 
-  --with-mysql-sock 
-  --with-pdo-mysql 
-  --with-tsrm-pthreads 
-  --enable-mysqlnd 
-  --enable-sigchild 
-  --enable-mbstring 
-  --enable-json 
-  --enable-cli 
-  --enable-cgi 
-  --enable-soap 
-  --with-zip  
-  --enable-phpdbg 
-  --enable-fpm 
-  --with-ldap 
-  --with-libdir=lib64 
-  --enable-sockets 
-  --enable-bcmath 
-  --enable-gd 
-  --with-jpeg 
-  --enable-calendar 
-  --with-freetype 
-  --with-pcre={{ pcre_source_install_path }}
+  --with-openssl
+  --with-pear
+  --with-bz2
+  --with-mysqli
+  --with-mysql-sock
+  --with-pdo-mysql
+  --enable-mysqlnd
+  --enable-sigchild
+  --enable-mbstring
+  --enable-cli
+  --enable-cgi
+  --enable-soap
+  --with-zip
+  --enable-phpdbg
+  --enable-fpm
+  --with-ldap
+  --with-libdir=lib64
+  --enable-sockets
+  --enable-bcmath
+  --enable-gd
+  --with-jpeg
+  --enable-calendar
+  --with-freetype
   'PKG_CONFIG_PATH={{ gml_source_path }}/lib/pkgconfig/'
 curl_source_install_path: "{{ gml_source_path }}/{{ curl_version }}"
 pcre_source_install_path: "{{ gml_source_path }}/{{ pcre_version }}"
@@ -215,7 +207,7 @@ php_install_pear: false
 compressed_dir: "downloads"
 php_install_path: "{{ gml_source_path }}/php-{{ php_version_number }}"
 
-memcached_clone_dir: "/export/home/hms/hmsops/memcached"
+memcached_clone_dir: "{{ download_source_dir }}/memcached"
 memcached_source_url: "http://pecl.php.net/get/"
 libmemcached_source_url: "https://launchpad.net/libmemcached/1.0/1.0.18/+download/"
 libmemcached_configure_command: >
