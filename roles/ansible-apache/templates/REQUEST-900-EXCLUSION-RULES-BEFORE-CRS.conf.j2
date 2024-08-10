@@ -1,0 +1,136 @@
+SecRule REQUEST_URI "@beginsWith /.log" \
+     "id:1004,\
+     phase:2,\
+     pass,\
+     nolog,\
+     ctl:ruleRemoveById=920440"
+SecRule REQUEST_URI "@beginsWith /login" \
+     "phase:2,nolog,pass,id:30000,ctl:ruleRemoveTargetById=949110;ARGS"
+SecRule REQUEST_URI "@contains /send" \
+     "phase:2,nolog,pass,id:30001,ctl:ruleRemoveById=933210"
+SecRule REQUEST_URI "@contains /send" \
+     "phase:2,nolog,pass,id:30002,ctl:ruleRemoveById=921120"
+SecRule REQUEST_URI "@contains /send" \
+     "phase:2,nolog,pass,id:30003,ctl:ruleRemoveById=921160"
+SecRule REQUEST_URI "@contains /send" \
+     "phase:2,nolog,pass,id:30004,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@beginsWith /daily-on-call" \
+     "phase:2,nolog,pass,id:30005,ctl:ruleRemoveTargetById=980130;ARGS"
+SecRule REQUEST_URI "@contains /send" \
+     "phase:2,nolog,pass,id:30006,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /dynatrace" \
+     "phase:2,nolog,pass,id:30007,ctl:ruleRemoveById=920350"
+SecRule REQUEST_URI "@beginsWith /daily-on-call" \
+     "phase:2,nolog,pass,id:30008,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /login" \
+     "phase:2,nolog,pass,id:30009,ctl:ruleRemoveById=942100"
+SecRule REQUEST_URI "@beginsWith /login" \
+     "phase:2,nolog,pass,id:30010,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@beginsWith /web/api/processReceive" \
+     "phase:2,nolog,pass,id:30011,ctl:ruleRemoveById=942100"
+SecRule REQUEST_URI "@beginsWith /web/api/processReceive" \
+     "phase:2,nolog,pass,id:30012,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@beginsWith /web/api/processReceive" \
+     "phase:2,nolog,pass,id:30013,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /roster-document/download" \
+     "phase:2,nolog,pass,id:30014,ctl:ruleRemoveById=933160"
+SecRule REQUEST_URI "@beginsWith /roster-document/download" \
+     "phase:2,nolog,pass,id:30015,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@contains send" \
+     "phase:2,nolog,pass,id:30016,ctl:ruleRemoveById=932130"
+SecRule REQUEST_URI "@contains message" \
+     "phase:2,nolog,pass,id:30017,ctl:ruleRemoveById=932130"
+SecRule REQUEST_URI "@contains message" \
+     "phase:2,nolog,pass,id:30018,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@contains message" \
+     "phase:2,nolog,pass,id:30019,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /api/" \
+     "phase:2,nolog,pass,id:30020,ctl:ruleRemoveById=930120"
+SecRule REQUEST_URI "@beginsWith /api/" \
+     "phase:2,nolog,pass,id:30021,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /api/" \
+     "phase:2,nolog,pass,id:30022,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@beginsWith /daily-on-call/" \
+     "phase:2,nolog,pass,id:30023,ctl:ruleRemoveById=932130"
+SecRule REQUEST_URI "@beginsWith /daily-on-call/" \
+     "phase:2,nolog,pass,id:30024,ctl:ruleRemoveById=941100"
+SecRule REQUEST_URI "@beginsWith /daily-on-call/" \
+     "phase:2,nolog,pass,id:30025,ctl:ruleRemoveById=941160"
+SecRule REQUEST_URI "@beginsWith /e-broadcast" \
+     "phase:2,nolog,pass,id:30026,ctl:ruleRemoveById=932130"
+SecRule REQUEST_URI "@beginsWith /appapi" \
+     "phase:2,nolog,pass,id:30027,ctl:ruleRemoveById=941180"
+SecRule REQUEST_URI "@beginsWith /support-tools" \
+     "phase:2,nolog,pass,id:30028,ctl:ruleRemoveById=941180"
+SecRule REQUEST_URI "@beginsWith /appapi" \
+     "phase:2,nolog,pass,id:30029,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /support-tools" \
+     "phase:2,nolog,pass,id:30030,ctl:ruleRemoveById=932130"
+SecRule REQUEST_URI "@beginsWith /support-tools" \
+     "phase:2,nolog,pass,id:30031,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@beginsWith /support-tools" \
+     "phase:2,nolog,pass,id:30032,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /api" \
+     "phase:2,nolog,pass,id:30033,ctl:ruleRemoveById=921160"
+SecRule REQUEST_URI "@contains upload" \
+     "phase:2,nolog,pass,id:30034,ctl:ruleRemoveById=933210"
+SecRule REQUEST_URI "@beginsWith /clinical" \
+     "phase:2,nolog,pass,id:30035,ctl:ruleRemoveById=933210"
+SecRule REQUEST_URI "@beginsWith /api" \
+     "phase:2,nolog,pass,id:30036,ctl:ruleRemoveById=920170"
+SecRule REQUEST_URI "@beginsWith /sms" \
+     "phase:2,nolog,pass,id:30037,ctl:ruleRemoveById=921160"
+SecRule REQUEST_URI "@beginsWith /clinical" \
+     "phase:2,nolog,pass,id:30038,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30039,ctl:ruleRemoveById=941200"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30040,ctl:ruleRemoveById=941350"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30041,ctl:ruleRemoveById=942250"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30042,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /roster-document/upload" \
+     "phase:2,nolog,pass,id:30043,ctl:ruleRemoveById=200004"
+SecRule REQUEST_URI "@beginsWith /api" \
+     "phase:2,nolog,pass,id:30044,ctl:ruleRemoveById=932110"
+SecRule REQUEST_URI "@beginsWith /api" \
+     "phase:2,nolog,pass,id:30045,ctl:ruleRemoveById=932115"
+SecRule REQUEST_URI "@beginsWith /api" \
+     "phase:2,nolog,pass,id:30046,ctl:ruleRemoveById=941160"
+SecRule REQUEST_URI "@beginsWith /api" \
+     "phase:2,nolog,pass,id:30047,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /appapi" \
+     "phase:2,nolog,pass,id:30048,ctl:ruleRemoveById=943120"  
+SecRule REQUEST_URI "@beginsWith /hl7/scm" \
+     "phase:2,nolog,pass,id:30049,ctl:ruleRemoveById=920350"
+SecRule REQUEST_URI "@beginsWith /clinical" \
+     "phase:2,nolog,pass,id:30050,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /daily-on-call" \
+     "phase:2,nolog,pass,id:30051,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30052,ctl:ruleRemoveById=932130"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30053,ctl:ruleRemoveById=949110"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30054,ctl:ruleRemoveById=980130"
+SecRule REQUEST_URI "@beginsWith /support-tools" \
+     "phase:2,nolog,pass,id:30055,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30056,ctl:ruleRemoveById=933210"
+SecRule REQUEST_URI "@beginsWith /caact" \
+     "phase:2,nolog,pass,id:30057,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /send-bc-msg" \
+     "phase:2,nolog,pass,id:30058,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /send-bc-msg" \
+     "phase:2,nolog,pass,id:30059,ctl:ruleRemoveById=932140"
+SecRule REQUEST_URI "@beginsWith /hms_api" \
+     "phase:2,nolog,pass,id:30060,ctl:ruleRemoveById=200005"
+SecRule REQUEST_URI "@beginsWith /hms_api" \
+     "phase:2,nolog,pass,id:30061,ctl:ruleRemoveById=932140"
+SecRule REQUEST_URI "@beginsWith /roster" \
+     "phase:2,nolog,pass,id:30062,ctl:ruleRemoveById=942360"
+SecRule REQUEST_URI "@beginsWith /daily-on-call" \
+     "phase:2,nolog,pass,id:30063,ctl:ruleRemoveById=942360"
+SecRule REQUEST_URI "@beginsWith /daily-on-call" \
+     "phase:2,nolog,pass,id:30064,ctl:ruleRemoveById=200005"

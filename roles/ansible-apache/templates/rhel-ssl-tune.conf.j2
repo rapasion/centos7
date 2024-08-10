@@ -1,0 +1,41 @@
+{% if server is defined and server == 'db' %}
+Listen {{ ansible_default_ipv4.address }}:{{ https_db_port }}
+{% elif server is defined and server == 'hl7' %}
+Listen {{ ansible_default_ipv4.address }}:{{ https_hl7_port }}
+{% else %}
+{% for entry in httpd_listen_ports %}
+Listen {{ entry.ip }}:{{ entry.port }}
+{% endfor %}
+{% endif %}
+
+AddType application/x-x509-ca-cert .crt
+AddType application/x-pkcs7-crl    .crl
+
+SSLPassPhraseDialog  builtin
+
+SSLSessionCache        "shmcb:{{ gml_source_path }}/logs/apache/ssl_scache(512000)"
+SSLSessionCacheTimeout  300
+
+
+SSLProtocol             TLSv1.2
+#CipherSuite from InsightVM
+SSLCipherSuite  ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!3DES:!MD5:!PSK
+#SSLCipherSuite          ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS
+SSLHonorCipherOrder     on
+SSLCompression          off
+SSLSessionTickets       off
+SSLOpenSSLConfCmd DHParameters "{{ gml_source_path }}/ssl/dhparam.pem"
+
+SSLInsecureRenegotiation    Off
+SSLUseStapling  On
+SSLStaplingCache    "shmcb:{{ gml_source_path }}/logs/apache/ssl_staple_scache(512000)"
+
+Mutex posixsem
+
+#php_flag log_errors on
+#php_flag display_errors on
+#php_value error_reporting 2147483647
+#php_value error_log {{ gml_source_path }}/logs/php/php_error.log
+   
+#path to include ssl-vhost
+#Include /export/home/gml_source/conf/apache/extra/https/*.conf

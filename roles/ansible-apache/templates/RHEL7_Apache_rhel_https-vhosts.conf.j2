@@ -1,0 +1,77 @@
+<VirtualHost *:443>
+    ServerAdmin operations@hms.sg
+    DocumentRoot /export/home/hms/{{ gml_hospital }}/onramp_web/public/
+    ServerName jmchms-uat.nhg.local
+    <Directory /export/home/hms/{{ gml_hospital }}/onramp_web/public>
+        AllowOverride All
+    </Directory>
+    SSLEngine On
+    SSLCertificateFile {{ gml_source_path }}/ssl/{{ gml_ssl_certificate }}
+    SSLCertificateKeyFile {{ gml_source_path }}/ssl/{{ gml_ssl_key }}
+
+    ErrorLog {{ gml_source_path }}/logs/apache/{{ gml_ssl_error_log }}
+    CustomLog {{ conf_apachelog_dir }}/{{ gml_ssl_access_log }} common
+
+# HSTS (mod_headers is required) (15768000 seconds = 6 months)
+    Header always set Strict-Transport-Security "max-age=15768000"
+   <Files ~ "\.(cgi|shtml|html|php)$">
+        SSLOptions +StdEnvVars
+   </Files>
+   <Directory "{{ httpd_install_path }}/cgi-bin">
+        SSLOptions +StdEnvVars
+   </Directory>
+   SetEnvIf User-Agent ".*MSIE.*" nokeepalive ssl-unclean-shutdown
+   CustomLog {{ gml_source_path }}/logs/apache/ssl_request_log \
+      "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+</VirtualHost>
+
+
+<VirtualHost *:8443>
+    ServerAdmin operations@hms.sg
+    DocumentRoot /export/home/hms/{{ gml_hospital }}/htdocs/
+    ServerName {{ gml_hospital }}
+    SSLEngine On
+    SSLCertificateFile {{ gml_source_path }}/ssl/{{ gml_ssl_certificate }}
+    SSLCertificateKeyFile {{ gml_source_path }}/ssl/{{ gml_ssl_key }}
+
+    ErrorLog {{ gml_source_path }}/logs/apache/{{ gml_ssl_error_log }}
+    CustomLog {{ conf_apachelog_dir }}/{{ gml_ssl_access_log }} common
+
+# HSTS (mod_headers is required) (15768000 seconds = 6 months)
+    Header always set Strict-Transport-Security "max-age=15768000"
+   <Files ~ "\.(cgi|shtml|html|php)$">
+        SSLOptions +StdEnvVars
+   </Files>
+   <Directory "{{ httpd_install_path }}/cgi-bin">
+        SSLOptions +StdEnvVars
+   </Directory>
+   SetEnvIf User-Agent ".*MSIE.*" nokeepalive ssl-unclean-shutdown
+   CustomLog {{ gml_source_path }}/logs/apache/ssl_request_log \
+      "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+</VirtualHost>
+
+
+<VirtualHost *:8010>
+    ServerAdmin operations@hms.sg
+    DocumentRoot /export/home/hms/{{ gml_hospital }}/htdocs
+    Alias /logs /export/home/hms/{{ gml_hospital }}/logs
+    ServerName {{ gml_servername }}
+    SSLEngine On
+    SSLCertificateFile {{ gml_source_path }}/ssl/{{ gml_ssl_certificate }}
+    SSLCertificateKeyFile {{ gml_source_path }}/ssl/{{ gml_ssl_key }}
+
+    ErrorLog {{ gml_source_path }}/logs/apache/{{ gml_ssl_error_log }}
+    CustomLog {{ conf_apachelog_dir }}/{{ gml_ssl_access_log }} common
+
+# HSTS (mod_headers is required) (15768000 seconds = 6 months)
+    Header always set Strict-Transport-Security "max-age=15768000"
+   <Files ~ "\.(cgi|shtml|html|php)$">
+        SSLOptions +StdEnvVars
+   </Files>
+   <Directory "{{ httpd_install_path }}/cgi-bin">
+        SSLOptions +StdEnvVars
+   </Directory>
+   SetEnvIf User-Agent ".*MSIE.*" nokeepalive ssl-unclean-shutdown
+   CustomLog {{ gml_source_path }}/logs/apache/ssl_request_log \
+      "%t %h %{SSL_PROTOCOL}x %{SSL_CIPHER}x \"%r\" %b"
+</VirtualHost>

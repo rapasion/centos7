@@ -1,0 +1,14 @@
+[Unit]
+Description=The Apache HTTP Server
+After=network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+ExecStart={{ gml_source_path }}/bin/apachectl -k start
+ExecStop={{ gml_source_path }}/bin/apachectl -k stop
+ExecReload={{ gml_source_path }}/bin/apachectl -k graceful
+RemainAfterExit=yes
+
+
+[Install]
+WantedBy=multi-user.target
