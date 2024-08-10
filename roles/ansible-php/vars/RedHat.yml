@@ -1,0 +1,33 @@
+---
+__php_packages:
+  - php
+  - php-cli
+  - php-common
+  - php-devel
+  - php-fpm
+  - php-gd
+  - php-ldap
+  - php-mbstring
+  - php-opcache
+  - php-pdo
+  - php-pear
+  - php-pecl-apcu
+  - php-xml
+  - php-xmlrpc
+__php_webserver_daemon: "httpd"
+
+__php_conf_paths:
+  - "{{ php_fpm_conf_path }}"
+
+__php_extension_conf_paths:
+  - "{{ php_fpm_conf_path }}/php.d"
+
+__php_apc_conf_filename: 50-apc.ini
+__php_opcache_conf_filename: 10-opcache.ini
+__php_fpm_daemon: php-fpm
+__php_fpm_conf_path: "{{ php_fpm_conf_path }}"
+__php_fpm_pool_conf_path: "{{ php_fpm_conf_path }}/php-fpm.d/vhostname-0.conf"
+# /opt/gml_source/conf/php5.6.40/php-fpm.d/vhostname-0.conf
+
+__php_fpm_pool_user: "{{ code_user }}"
+__php_fpm_pool_group: "{{ code_user }}"
