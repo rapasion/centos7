@@ -1,0 +1,47 @@
+---
+
+- name: Check failed Apache Version
+  shell: ps -ef | grep httpd | grep -v grep | awk '{print $8}' | cut -b 31-36 | head -n 1
+  register: failed_httpd_version
+
+- name: Stop HTTPD services
+  shell: sh -c "{{ sh_httpd_stop }}"
+
+- name: Rollback Apache Version
+  unarchive:
+    src: "{{ gml_source_path }}/apache{{ httpd_version }}.tar.gz"
+    dest: "{{ gml_source_path }}"
+
+- name: Change permission apache rollback directory
+  become: yes
+  become_user: root
+  become_method: sudo
+  shell: |
+    chown -R {{ code_user }}:{{ code_user }} {{ gml_source_path }}/apache{{ httpd_version }}
+    chmod -R 750 {{ gml_source_path }}/apache{{ httpd_version }}
+    
+- name: Ensure Apache executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ httpd_install_path }}/bin/*"
+
+## Apache CIS-Hardening
+- name: "SCORED | 3.4 | PATCH | Ensure Apache Directories and Files Are Owned By Root"
+  shell: sh -c "sudo chown -R root {{ apache_cis_server_root_dir }}"
+  
+- name: Start HTTPD services
+  shell: sh -c "{{ sh_httpd_start }}"
+
+- name: Remove failed Apache folder directory
+  become: yes
+  become_user: root
+  become_method: sudo
+  file:
+    state: absent
+    path: "{{ gml_source_path }}/apache{{failed_httpd_version.stdout}}"

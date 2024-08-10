@@ -1,0 +1,23 @@
+---
+- name: Check if compressed file exists.
+  file:
+    state: directory
+    path: "{{ playbook_dir }}/{{ compressed_dir }}"
+
+- name: Change Apache installation ownership
+  file:
+    path: "{{ httpd_install_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+  become: yes
+  become_method: sudo
+  become_user: root
+
+- name: Compress HTTPD Installation Directory
+  archive:
+    path: "{{ httpd_install_path }}"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ gml_source_httpd_file }}"
+  become: yes
+  become_method: sudo
+  become_user: root

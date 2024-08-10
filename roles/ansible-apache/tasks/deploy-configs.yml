@@ -1,0 +1,11 @@
+--- 
+- name: Modify httpd.conf to include Deny IP Address Based Requests CIS 5.12
+  lineinfile:
+    path: "{{ gml_source_apache_conf_path }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertafter: 'RewriteOptions Inherit'
+  with_items:
+    - { regexp: 'RewriteRule \^\.\(\.\*\).*', line: 'RewriteRule ^.(.*) - [L,F]' }
+    - { regexp: 'RewriteCond %{REQUEST_URI}.*', line: 'RewriteCond %{REQUEST_URI} !^/error [NC]' }
+    - { regexp: 'RewriteCond %{HTTP_HOST}.*', line: 'RewriteCond %{HTTP_HOST} !^{{ ansible_hostname }}.{{ ansible_domain }} [NC]' }

@@ -1,0 +1,83 @@
+---
+
+## POST Upgrade Steps ##
+- name: Check old Apache Version
+  shell: ps -ef | grep httpd | grep -v grep | awk '{print $8}' | cut -b 31-36 | head -n 1
+  register: old_httpd_version
+  tags: post_upgrade_httpd
+
+- name: Stop HTTPD services
+  shell: sh -c "{{ sh_httpd_stop }}"
+
+- name: Extract Source file
+  unarchive:
+    src: "{{ playbook_dir }}/{{ compressed_dir }}/{{ gml_source_httpd_file }}"
+    dest: "{{ gml_source_path }}"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    remote_src: yes
+
+- name: Change permission apache directory
+  become: yes
+  become_user: root
+  become_method: sudo
+  shell: |
+    chown -R {{ code_user }}:{{ code_user }} {{ gml_source_path }}/apache{{ httpd_version }}
+    chmod -R 750 {{ gml_source_path }}/apache{{ httpd_version }}
+
+- name: Ensure Apache executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ httpd_install_path }}/bin/*"
+
+  ## Copy libphp.so for NUH
+- name: Copy libphp.so
+  copy:
+    src: "{{ gml_source_path }}/apache{{old_httpd_version.stdout}}/modules/libphp.so"
+    dest: "{{ gml_source_path }}/apache{{ httpd_version }}/modules/"
+  when: hospital == 'nuh'
+
+- name: Make sure test-cgi file is absent
+  file:
+    state: absent
+    path: "{{ gml_source_path }}/apache{{ httpd_version}}/cgi-bin/{{item}}"
+  loop:
+    - test-cgi
+    - printenv
+    - printenv.vbs
+    - printenv.wsf
+
+## Apache CIS-Hardening
+- name: "SCORED | 3.4 | PATCH | Ensure Apache Directories and Files Are Owned By Root"
+  shell: sh -c "sudo chown -R root {{ apache_cis_server_root_dir }}"
+
+- name: Start HTTPD services
+  shell: sh -c "{{ sh_httpd_start }}"
+
+
+## POST Upgrade Steps ##
+- name: Compress old Apache Version
+  become: yes
+  become_user: root
+  become_method: sudo
+  archive:
+    path: "{{ gml_source_path }}/apache{{old_httpd_version.stdout}}"
+    dest: "{{ gml_source_path }}/apache{{old_httpd_version.stdout}}.tar.gz"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+  tags: post_upgrade_httpd
+
+- name: Remove old Apache folder directory
+  become: yes
+  become_user: root
+  become_method: sudo
+  file:
+    state: absent
+    path: "{{ gml_source_path }}/apache{{old_httpd_version.stdout}}"
+  tags: post_upgrade_httpd

@@ -1,0 +1,52 @@
+---
+
+- name: Check startup folder exists.
+  stat:
+    path: "{{ gml_source_path }}/startup"
+  register: register_startup_folder
+  tags: startup
+
+- name: Check symlink for systemd HTTPD
+  stat:
+    path: "/etc/systemd/system/multi-user.target.wants/httpd.service"
+  register: register_systemd_httpd
+  tags: startup
+
+- name: Create startup folder.
+  file:
+    path: "{{ gml_source_path }}/startup"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_startup_folder.stat.exists
+  tags: startup
+
+- name: HTTPD startup script
+  template:
+    src: httpd.service.j2
+    dest: "{{ gml_source_path }}/startup/httpd.service"
+  tags: startup
+
+- name: Copy HTTPD startup script to systemd
+  command: 'sudo cp -f {{ gml_source_path }}/startup/httpd.service /usr/lib/systemd/system/'
+  tags: startup
+
+- name: Create link for systemd - HTTPD
+  command: "{{ item }}"
+  with_items:
+    - 'sudo ln -s /usr/lib/systemd/system/httpd.service /etc/systemd/system/multi-user.target.wants/httpd.service'
+    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/httpd.service'
+    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/httpd.service'
+  when: not register_systemd_httpd.stat.exists
+  tags: startup
+
+- name: Reload systemd
+  command: "{{ sh_systemctl }} daemon-reload"
+  tags: startup
+
+- name: Enable HTTPD in Systemctl
+  shell: sh -c "{{ sh_httpd_enable }}"
+
+- name: Start HTTPD in Systemctl
+  shell: sh -c "{{ sh_httpd_start }}"

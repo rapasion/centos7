@@ -1,0 +1,55 @@
+# Check if Source Dir Exists
+- name: Check if Directory Exists
+  file:
+    path: "{{ gml_source_path }}/{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  with_items:
+    - conf/apache
+    - bin
+    - "apache{{ httpd_version}}"
+    - conf/apache/extra
+    - conf/apache/extra/http
+    - conf/apache/extra/https
+    - run/apache
+    - logs/apache
+    - lib/apr-util-1
+    - ssl
+    - "{{ httpd_install_path }}/htdocs"
+
+- name: Ensure CRS Directory exists in GML Source
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+  loop:
+    - "{{ gml_source_modsecurity_conf_path }}"
+    - "{{ gml_source_modsecurity_conf_path }}/crs/"
+
+- name: Extract downloaded OWASP CRS tar.gz file
+  unarchive:
+    src: "{{ installer_dir }}{{ coreruleset_version }}.tar.gz"
+    dest: "{{ installer_dir }}"
+    remote_src: yes
+
+- name: Ensure pgtool folder exists
+  file:
+    path: "/export/home/hms/htdocs/pgtool"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when:
+    - server is defined
+    - server == "db"
+
+- name: Ensure httpd lock file exists
+  file:
+    path: "{{ apache_cis_lockfile_location }}/httpd.lock"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+    state: touch

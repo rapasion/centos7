@@ -1,0 +1,164 @@
+---
+
+- name: create httpd Config File
+  template: 
+    src: RHEL7_Apache_rhel7-httpd-orig.conf.j2
+    dest: "{{ gml_source_path }}/conf/apache/httpd.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0640"
+  tags: 
+    - httpd_config
+
+- name: Copy HTTPD Extras vhostssl
+  template:
+    src: rhel-ssl-tune.conf.j2
+    dest: "{{ gml_source_path }}/conf/apache/extra/httpd-ssl.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0644'
+
+- name: Enable selinux ports defined in httpd extras from previous step otherwise httpd won't start
+  shell: "sudo semanage port -a -t http_port_t -p tcp {{item.port}}"
+  ignore_errors: true
+  with_items: "{{httpd_listen_ports}}"
+  tags: 
+    - apache-selinux
+
+- name: Copy file with owner and permissions
+  copy:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/conf/apache/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0644'
+  loop:
+    - magic
+    - mime.types
+
+#- name: Include configs for HL7 or DB
+#  include: deploy-configs.yml
+# when: 
+#    - server is defined
+#    - server == 'hl7' or server =='db'
+#    - code_environment is defined
+
+#- name: Uncomment Include HTTPS File in Apache
+#  lineinfile:
+#    path: "{{ gml_source_apache_ssl_conf_path }}"
+#    regexp: 'conf/apache/extra/https/*.conf$'
+#    line: 'Include {{ gml_source_apache_ssl_add_conf_path }}/*.conf'
+#  tags: config
+#  when: 
+#    - server is defined
+#    - server == "db" or server == "hl7"
+
+- name: Copy dhparam.pem in Apache SSL folder
+  template:
+    src: "{{ playbook_dir }}/ssl/dhparam.pem"
+    dest: "{{ gml_source_path }}/ssl/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0644'
+
+- name: Ensure CRS Directory exists in GML Source
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  loop:
+    - "{{ gml_source_modsecurity_conf_path }}"
+    - "{{ gml_source_modsecurity_conf_path }}/crs/"
+  tags:
+    - modsec_install
+
+- name: Copy CRS to GML Source dir
+  copy:
+    src: "{{ installer_dir }}coreruleset-{{ coreruleset_version }}/rules"
+    dest: "{{ gml_source_modsecurity_conf_path }}/crs/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+    remote_src: yes
+  tags:
+    - modsec_install
+
+- name: Deploy crs-setup.conf
+  template:
+    src: crs-setup.conf
+    dest: "{{ gml_source_modsecurity_conf_path }}/crs/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+  tags:
+    - modsec_install
+
+- name: Deploy modsecurity.conf
+  template:
+    src: modsecurity.conf.j2
+    dest: "{{ gml_source_modsecurity_conf_path }}/modsecurity.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+  notify: restart webserver
+  tags:
+    - modsec_install
+    - modsec_config
+
+- name: Deploy unicode.mapping
+  template:
+    src: unicode.mapping
+    dest: "{{ gml_source_modsecurity_conf_path }}/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+  tags:
+    - modsec_install
+
+- name: Deploy RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+  template:
+    src: RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.j2
+    dest: "{{ gml_source_modsecurity_conf_path }}/crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0640"
+  notify: restart webserver
+  tags:
+    - 999_exclusion
+    - modsec_install
+
+- name: Deploy REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+  template:
+    src: REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.j2
+    dest: "{{ gml_source_modsecurity_conf_path }}/crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0640"
+  notify: restart webserver
+  tags:
+    - 900_exclusion
+    - modsec_install
+
+- name: Check Found libraries for mod_security2.so
+  register: mod_sec_lib
+  command: "sudo ldd {{ gml_source_path }}/apache{{ httpd_version}}/modules/mod_security2.so"
+
+- name: Check gml_source file under ld.so.conf.d folder
+  stat:
+    path: "/etc/ld.so.conf.d/gml_source.conf"
+  register: gml_source_ld
+
+- name: Create gml_source.conf file.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "echo '{{ gml_source_path }}/lib' > gml_source.conf"
+    - "sudo vi gml_source.conf -c ':w /etc/ld.so.conf.d/gml_source.conf' -c ':q!'"
+    - "rm -f gml_source.conf"
+  when:
+    - not gml_source_ld.stat.exists
+
+- name: Reload environment.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo vi /etc/ld.so.conf.d/gml_source.conf -c ':r!ldconfig' -c ':q!'"
+  when:
+    - not gml_source_ld.stat.exists or mod_sec_lib.stdout.find(' not found') != -1

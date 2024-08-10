@@ -1,0 +1,165 @@
+---
+- name: Ensure epel-release is are installed (RedHat).
+  package:
+    name:
+      - epel-release
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Ensure dependencies for building from source are installed (RedHat).
+  become: yes
+  become_user: root
+  become_method: sudo
+  yum:
+    name:
+      - autoconf
+      - automake
+      - libtool
+      - bison
+      - make
+#      - curl-devel
+      - recode-devel
+      - aspell-devel
+      - libxml2-devel
+      - pkgconfig
+      - libmcrypt-devel
+      - t1lib-devel
+      - libXpm-devel
+      - libpng-devel
+      - libjpeg-turbo-devel
+      - bzip2-devel
+      - openssl-devel
+      - freetype-devel
+      - libicu-devel
+      - mariadb-devel
+      - gmp-devel
+      - expat-devel
+    state: present
+  when: ansible_os_family == 'RedHat'
+
+- name: Update apt cache (Debian).
+  apt: update_cache=yes cache_valid_time=86400
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure dependencies for building from source are installed (Debian).
+  apt:
+    name:
+      - build-essential
+      - autoconf
+      - automake
+      - libtool
+      - bison
+      - pkg-config
+      - re2c
+      - libxml2-dev
+      - libcurl4-openssl-dev
+      - libbz2-dev
+      - libjpeg-dev
+      - libpng-dev
+      - libxpm-dev
+      - libfreetype6-dev
+      - libgmp3-dev
+      - libmcrypt-dev
+      - libmysqlclient-dev
+      - libpspell-dev
+      - librecode-dev
+      - libssl-dev
+    state: present
+  when: ansible_os_family == 'Debian'
+
+#- name: Check if HTTPD is installed.
+#  shell: "ls -ltrha {{ gml_source_path }} | grep apache | grep -v '.gz' | awk '{print $9}' | cut -b 7-12 | tail -n 1"
+#  changed_when: false
+#  failed_when: false
+#  register: httpd_installed
+
+- name: Create directory for HTTPD installer directory if it does not exist
+  file:
+    path: "{{ httpd_installer_dir }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+
+- name: Download latest stable version of HTTPD
+  get_url:
+    url: "{{ httpd_source_url }}"
+    dest: "{{ httpd_installer_dir }}"
+    # checksum: "{{ httpd_source_checksum }}"
+##  when: httpd_installed.rc != 0
+
+- name: Extract downloaded HTTPD tar.gz file
+  unarchive:
+    src: "{{ httpd_installer_dir }}/{{ httpd_source_version }}.tar.gz"
+    dest: "{{ httpd_installer_dir }}"
+    remote_src: yes
+#  when: httpd_installed.rc != 0
+
+- name: Ensure HTTPD installation path exists.
+  file:
+    path: "{{ httpd_install_path }}"
+    state: directory
+    mode: "0750"
+#  when: httpd_installed.rc != 0
+
+- name: Download latest stable version of APR
+  get_url:
+    url: "{{ apr_source_url }}{{ apr_source_version }}.tar.gz"
+    dest: "{{ httpd_installer_dir }}"
+    checksum: "{{ apr_source_checksum }}"
+#  when: httpd_installed.rc != 0
+
+- name: Extract downloaded APR tar.gz file
+  unarchive:
+    src: "{{ httpd_installer_dir }}{{ apr_source_version }}.tar.gz"
+    dest: "{{ httpd_installer_dir }}"
+    remote_src: yes
+#  when: httpd_installed.rc != 0
+
+- name: Download latest stable version of APR-UTIL
+  get_url:
+    url: "{{ apr_source_url }}{{ apr_util_source_version }}.tar.gz"
+    dest: "{{ httpd_installer_dir }}"
+    checksum: "{{ apr_util_source_checksum }}"
+#  when: httpd_installed.rc != 0
+
+- name: Extract downloaded APR-UTIL tar.gz file
+  unarchive:
+    src: "{{ httpd_installer_dir }}{{ apr_util_source_version }}.tar.gz"
+    dest: "{{ httpd_installer_dir }}"
+    remote_src: yes
+#  when: httpd_installed.rc != 0
+
+- name: Move APR inside HTTPD installation dir
+  command: mv {{ httpd_installer_dir }}{{ apr_source_version }} {{ httpd_installer_dir }}/{{ httpd_source_version }}/srclib/apr
+
+- name: Move APR-UTIL inside HTTPD installation dir
+  command: mv {{ httpd_installer_dir }}{{ apr_util_source_version }} {{ httpd_installer_dir }}/{{ httpd_source_version }}/srclib/apr-util
+
+- name: Run configure script.
+  command: >
+    {{ httpd_source_configure_command }}
+    chdir={{ httpd_installer_dir }}/{{ httpd_source_version }}
+#  when: httpd_installed.rc != 0
+
+- name: Make and install HTTPD.
+  command: >
+    {{ item }}
+    chdir={{ httpd_installer_dir }}/{{ httpd_source_version }}
+  with_items:
+    - make
+    - make install
+#  when: httpd_installed.rc != 0
+  become: yes
+  become_method: sudo
+  become_user: root
+
+- name: Import install-yajl.yml Installation
+  include_role:
+    name: apache-modsecurity2
+    tasks_from: install-yajl.yml
+
+- name: Import modsecurity2-apache Installation
+  include_role:
+    name: apache-modsecurity2
+    tasks_from: modsecurity2-apache.yml

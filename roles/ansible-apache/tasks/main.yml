@@ -1,0 +1,129 @@
+---
+
+- import_tasks: install-from-source.yml
+  tags:
+    - apache_install_from_source
+    - never
+
+- import_tasks: compress-apache.yml
+  tags:
+    - apache_install_from_source
+    - never
+
+- name: add apache_user to code_user group
+  become: yes
+  become_user: root
+  become_method: sudo
+  user:
+    name: '{{ apache_user }}'
+    groups: '{{ code_user }}'
+    shell: /sbin/nologin
+    append: yes
+  tags:
+    - apache_user
+    - never
+
+- import_tasks: create.yml
+  tags:
+    - create
+    - install_from_scratch
+    - never
+
+- import_tasks: install.yml
+  tags:
+    - apache
+    - install_from_scratch
+    - never
+
+- name: Add Ansible-Modsecurity2 Role
+  include_role:
+    name: apache-modsecurity2
+  tags:
+    - modsecurity
+    - install_from_scratch
+    - never
+
+- import_tasks: config.yml
+  tags:
+    - config
+    - install_from_scratch
+    - never
+
+- name: Deploy HL7 SSL vhost-crt-key files
+  block:
+  - name: Add HL7-deploy Role (deployment HL7 SSL crt and key file)
+    include_role:
+      name: hl7-deploy
+    tags:
+      - deploy-hl7-ssl-certs
+      - install_from_scratch
+      - never
+
+  - name: Add HL7-deploy Role (deployment HL7 vhost file)
+    include_role:
+      name: hl7-deploy
+    tags:
+      - deploy-hl7-ssl-vhost
+      - install_from_scratch
+      - never
+  when: server is defined and server == 'hl7'
+
+- import_tasks: startup.yml
+  tags:
+    - startup
+    - install_from_scratch
+    - never
+
+- import_tasks: upgrade.yml
+  notify: 'restart webserver'
+  tags:
+    - upgrade
+    - never
+
+- import_tasks: rollback_upgrade.yml
+  notify: 'restart webserver'
+  tags:
+    - rollback_apache
+    - never
+
+- import_tasks: cis-harden.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  notify: 'restart webserver'
+  tags: 
+    - cis-harden
+    - install_from_scratch
+    - never
+#  when:
+#    - server is defined
+#    - server == 'web' or server == 'app'
+
+- import_tasks: deploy-configs.yml
+  when: server is defined and server == 'hl7' or server =='db'
+  tags:
+    - cis_5_12
+    - never
+
+- name: Enable selinux ports defined in httpd extras for Apps Server
+  shell: sh -c "sudo semanage port -m -t http_port_t -p tcp 8002"
+  ignore_errors: true
+  when:
+    - server is defined
+    - server == 'app'
+  tags:
+    - apache-selinux 
+
+- name: Enable selinux ports defined in httpd extras for Apps Server port 8082
+  shell: sh -c "sudo semanage port -m -t http_port_t -p tcp 8082"
+  ignore_errors: true
+  when:
+    - server is defined
+    - server == 'app'
+  tags:
+    - apache-selinux     
+
+- name: restore-selinux-install-context
+  shell: sh -c "{{ selinux_restorecon }} {{ gml_source_path }}"
+  tags:
+    - apache-selinux

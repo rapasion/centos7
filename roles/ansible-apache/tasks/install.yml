@@ -1,0 +1,220 @@
+---
+
+# Extract Apache
+- name: Extract Source file
+  unarchive:
+    src: "{{ playbook_dir }}/{{ compressed_dir }}/{{ gml_source_httpd_file }}"
+    dest: "{{ gml_source_path }}"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    remote_src: yes
+
+- name: Remove Existing Apache executable symlinked
+  file:
+    path: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: absent
+  with_fileglob:
+    - "{{ httpd_install_path }}/bin/*"
+
+- name: Remove Existing Apache libs symlinked
+  file:
+    path: "{{ gml_source_path }}/lib/{{ item }}"
+    state: absent
+  with_fileglob:
+    - "{{ httpd_install_path }}/lib/*"
+
+- name: Remove Existing Apache lib/apr-util-1 symlinked
+  file:
+    path: "{{ gml_source_path }}/lib/apr-util-1/{{ item }}"
+    state: absent
+  with_fileglob:
+    - "{{ httpd_install_path }}/lib/apr-util-1/*"
+
+- name: Remove Existing Apache lib/pkgconfig symlinked
+  file:
+    path: "{{ gml_source_path }}/lib/pkgconfig/{{ item }}"
+    state: absent
+  with_fileglob:
+    - "{{ httpd_install_path }}/lib/pkgconfig/*"
+
+- name: Remove Existing Apache includes symlinked
+  file:
+    path: "{{ gml_source_path }}/include/{{ item }}"
+    state: absent
+  with_fileglob:
+    - "{{ httpd_install_path }}/include/*"
+
+- name: Ensure Apache executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ httpd_install_path }}/bin/*"
+
+- name: Ensure Apache libs are symlinked into a standard path.
+  file:
+    src: "{{ httpd_install_path }}/lib/{{ item }}"
+    dest: "{{ gml_source_path }}/lib/{{ item }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_items:
+    - apr.exp
+    - aprutil.exp
+    - libapr-1.a
+    - libapr-1.la
+    - libapr-1.so
+    - libapr-1.so.0
+    - libapr-1.so.0.7.0
+    - libaprutil-1.a
+    - libaprutil-1.la
+    - libaprutil-1.so
+    - libaprutil-1.so.0
+    - libaprutil-1.so.0.6.1
+
+- name: Check Apache lib/apr-util-1 if exists.
+  stat:
+    path: "{{ httpd_install_path }}/lib/apr-util-1"
+  register: httpd_lib_apr_util
+
+- name: Ensure Apache lib/apr-util-1 is symlinked into a standard path.
+  file:
+    src: "{{ httpd_install_path }}/lib/apr-util-1/{{ item }}"
+    dest: "{{ gml_source_path }}/lib/apr-util-1/{{ item }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_items:
+    - apr_dbd_pgsql-1.so
+    - apr_dbd_pgsql.a
+    - apr_dbd_pgsql.la
+    - apr_dbd_pgsql.so
+    - apr_dbd_sqlite3-1.so
+    - apr_dbd_sqlite3.a
+    - apr_dbd_sqlite3.la 
+    - apr_dbd_sqlite3.so
+  when:
+    - not httpd_lib_apr_util.stat.exists
+
+- name: Ensure Apache lib/pkgconfig is symlinked into a standard path.
+  file:
+    src: "{{ httpd_install_path }}/lib/pkgconfig/{{ item }}"
+    dest: "{{ gml_source_path }}/lib/pkgconfig/{{ item }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_items:
+    - apr-1.pc
+    - apr-util-1.pc
+
+- name: Ensure Apache includes are symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/include/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ httpd_install_path }}/include/*"
+
+- name: Change Apache ownership
+  file:
+    path: "{{ gml_source_path }}/apache{{ httpd_version }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: 0744 # Fix for CIS 3.6 and 3.11
+    recurse: yes
+
+- name: Make sure test-cgi file is absent
+  file:
+    state: absent
+    path: "{{ gml_source_path }}/apache{{ httpd_version}}/cgi-bin/{{item}}"
+  loop:
+    - test-cgi
+    - printenv
+    - printenv.vbs
+    - printenv.wsf
+
+- name: Make sure index.html file is absent
+  file:
+    state: absent
+    path: "{{ gml_source_path }}/apache{{ httpd_version}}/htdocs/{{item}}"
+  loop:
+    - index.html
+
+- block:
+  - name: Set apache configs selinux context
+    shell: "sudo semanage fcontext -a -t httpd_config_t '{{gml_source_path}}/conf(/.*)?'"
+  
+  - name: Set lib_t context for lib files
+    shell: "sudo semanage fcontext -a -t lib_t '{{httpd_install_path}}/lib(/.*)?'"
+
+  - name: Set httpd_modules_t context for modules
+    shell: "sudo semanage fcontext -a -t httpd_modules_t '{{httpd_install_path}}/modules(/.*)?'"
+
+  - name: Set httpd_var_run_t context for pid
+    shell: "sudo semanage fcontext -a -t httpd_var_run_t '{{gml_source_path}}/run/apache(/.*)?'"
+
+  - name: Set apache logs context
+    shell: "sudo semanage fcontext -a -t httpd_sys_rw_content_t '{{gml_source_path}}/logs(/.*)?'"
+
+  - name: Set httpd context
+    shell: "sudo semanage fcontext -a -t httpd_exec_t '{{gml_source_path}}/apache{{ httpd_version }}/bin/httpd*'"
+
+  - name: Set apachectl context
+    shell: "sudo semanage fcontext -a -t initrc_exec_t '{{gml_source_path}}/apache{{ httpd_version }}/bin/apachectl'"
+
+  - name: Allow homedirs
+    shell: "sudo setsebool -P httpd_enable_homedirs 1"
+
+  - name: Allow user read
+    shell: "sudo setsebool -P httpd_read_user_content 1"
+
+  - name: Allow nfs read
+    shell: "sudo setsebool -P httpd_use_nfs 1"
+
+  - name: Allow apache to connect to memcache
+    shell: "sudo setsebool -P httpd_can_network_memcache 1"
+
+  - name: Allow apache to email
+    shell: "sudo setsebool -P httpd_can_sendmail 1"
+
+  - name: Allow apache to network connect
+    shell: "sudo setsebool -P httpd_can_network_connect 1"
+
+  - name: Allow apache to network connect
+    shell: "sudo setsebool -P httpd_can_network_connect 1"
+
+  - name: Allow apache to network connect
+    shell: "sudo setsebool -P httpd_execmem 1"
+
+  - name: Copy gmlhms.pp file to gml_source
+    copy:
+      src: "{{ playbook_dir }}/roles/ansible-apache/files/gmlhms.pp"
+      dest: "{{ gml_source_path }}"
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0644'
+
+  - name: install selinux policy for HMS
+    shell: 'sudo semodule -i {{gml_source_path}}/gmlhms.pp'
+
+  tags:
+    - apache-selinux
+
+- name: Ensure httpd lock file exists
+  file:
+    path: "{{ apache_cis_lockfile_location }}/httpd.lock"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+    state: touch
