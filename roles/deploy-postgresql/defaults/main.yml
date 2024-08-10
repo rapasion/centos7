@@ -1,0 +1,239 @@
+---
+gml_source_psql_file: "export_gml_source_psql_{{ gml_pgsql_version }}.tar.gz"
+gml_source_path: /export/home/gml_source
+gml_logrotate_path: "{{ gml_source_path }}/logrotate"
+script_location: "{{ gml_source_path }}/scripts/"
+gml_pgsql_version: '12.19'
+compressed_dir: downloads
+postgresql_user: hmsdba
+postgresql_group: "{{ code_user }}"
+postgresql_data: /ypool/data
+postgresql_log: /xpool/postgre_data
+hl7_postgresql_log: /ypool/xpool/postgre_data
+code_user_dir: "/export/home/{{ code_user }}"
+gml_source_pgsql_file: "export_gml_source_psql_{{ gml_pgsql_version }}.tar.gz"
+
+install_psql: 'yes'
+startup_psql: 'no'
+configure_psql: 'no'
+
+pgsql_install_path: "{{ gml_source_path }}/postgres-{{ gml_pgsql_version }}/"
+pgsql_config_path: "{{ gml_source_path }}/conf/pgsql"
+pgsql_config_file: "{{ pgsql_config_path }}/postgresql.conf"
+pgsql_hba_file: "{{ pgsql_config_path }}/pg_hba.conf"
+pgsql_ident_file: "{{ pgsql_config_path }}/pg_ident.conf"
+pgsql_bin_path: "{{ gml_source_path }}/bin"
+pgsql_log_path: "{{ postgresql_log }}/pg_log"
+hl7_pgsql_log_path: "{{ hl7_postgresql_log }}/pg_log"
+pgsql_wal_path: "{{ postgresql_log }}/pg_wal"
+hl7_pgsql_wal_path: "{{ hl7_postgresql_log }}/pg_wal"
+pgsql_socket_path: "{{ gml_source_path }}/run/pgsql"
+
+conf_ssl_directory: "{{ gml_source_path }}/ssl"
+
+pgsql_port: 6433
+hl7_pgsql_port: 3360
+pgsql_dba_usr: gmldba
+pgsql_app_usr: hmsapp
+pgsql_rep_usr: hmsrep
+pgsql_read_usr: gmluser
+pgsql_default_db: postgres
+pgsql_recon_usr: pamdbrecon
+
+#pgsql_dba_pwd: 'SCRAM-SHA-256$4096:A//X8vVIbsBO1kmsKcKoEA==$1RZD2+ZyRDYIqHHzGYsi9nEcA15zraUT8PCkff64LhE=:T7R+j7eSylFJ7voErCUZ8ddadULLnK490l6AmP9yVRw='
+#pgsql_app_pwd: 'SCRAM-SHA-256$4096:c31lCM74F4AmNTJ0PGvrfw==$pdUCU1NQJIADqIEN5m/DmYQtMHxnqQKWiqTRRWcc0yo=:Cst262GNitYeDDf08jQ1NWAAcZitWnlc+79y0KVJr4k='
+#pgsql_rep_pwd: 'SCRAM-SHA-256$4096:5G4DeN1LW/GHtQubz881hg==$L6y8a9wp5D7b+N2FTsLIpX3g6P2VlYFp3vvtwcEbpyc=:Cug3/tFrmU7I7Pib+g/Vd+PW36k/+ZvU93iEYIaHjpk='
+#pgsql_pam_pwd: 'SCRAM-SHA-256$4096:CgSOkhFt/IRFed7EVtmCEw==$vtZ6zeUBLd1og+6uaG63R2AITAgiMybilgSI0k+glZk=:eLhY7xTzJkyRxpInGyG64SF4WiuahG1G4lJgkRrFV8g='
+
+pgsql_hba_entry:
+  - ip: 10.247.22.20
+  - ip: 10.247.22.21
+  - ip: 10.247.22.22
+  - ip: 10.247.22.39
+  - ip: 10.247.22.40
+  - ip: 10.247.22.41
+  - ip: 10.247.22.42
+  - ip: 10.247.22.43
+  - ip: 10.247.54.20
+  - ip: 10.247.54.21
+  - ip: 10.247.54.22
+  - ip: 10.247.54.39
+  - ip: 10.247.54.40
+  - ip: 10.247.54.41
+  - ip: 10.247.54.42
+  - ip: 10.247.54.43
+  - ip: 10.247.54.24
+  - ip: 10.247.22.24
+  - ip: 10.247.54.79
+  - ip: 10.247.22.79
+  - ip: 10.247.22.80
+  - ip: 10.247.22.81
+  - ip: 10.247.54.81
+  - ip: 10.247.54.82
+  - ip: 10.247.22.77
+  - ip: 10.247.22.78
+  - ip: 10.247.54.77
+  - ip: 10.247.54.78
+
+gml_source_psql_location: '{{ gml_source_path }}/postgres-{{ gml_pgsql_version }}/'
+
+data_partition: /ypool
+log_partition: /xpool
+
+## Variables for install-from-source
+postgresql_bin_path: '{{ gml_source_path }}/postgres-{{ gml_pgsql_version }}/bin'
+postgres_source_bin: "{{ gml_source_path }}/postgres-{{ gml_pgsql_version }}bin/psql"
+postgres_source_url: "https://ftp.postgresql.org/pub/source/v{{ gml_pgsql_version }}/"
+postgres_source_version: "postgres-{{ gml_pgsql_version }}"
+postgres_source_checksum: "sha256:9b9312c35ca33f309a96a01dc5802c185a91c3617c5f948cec08b7f88dab0609"
+postgres_installer_dir: "{{ gml_source_path }}/pgsql-src/"
+postgres_install_path: "{{ gml_source_path }}/{{ postgres_source_version }}"
+postgres_source_configure_command: >
+  ./configure
+  --enable-rpath
+  --prefix={{ postgres_install_path }}
+  --includedir={{ postgres_install_path }}include
+  --libdir={{ postgres_install_path }}lib
+  --mandir={{ postgres_install_path }}share/man
+  --datadir={{ postgres_install_path }}share
+  --with-icu
+  CLANG=/opt/rh/llvm-toolset-7/root/usr/bin/clang
+  LLVM_CONFIG=/opt/rh/llvm-toolset-7/root/usr/bin/llvm-config
+  --with-llvm
+  --with-perl
+  --with-python
+  --with-tcl
+  --with-tclconfig=/usr/lib64
+  --with-openssl
+  --with-pam
+  --enable-dtrace
+  --with-gssapi
+  --with-includes=/usr/include
+  --with-libraries=/usr/lib64
+  --enable-nls
+  --with-uuid=e2fs
+  --with-libxml
+  --with-libxslt
+  --with-ldap
+  --with-selinux
+  --with-systemd
+  --with-system-tzdata=/usr/share/zoneinfo
+  --sysconfdir=/etc/sysconfig/pgsql
+  --docdir={{ postgres_install_path }}doc
+  --htmldir={{ postgres_install_path }}doc/html
+  CFLAGS='-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic'
+  LDFLAGS='-Wl,--as-needed'
+  PKG_CONFIG_PATH=:/usr/lib64/pkgconfig:/usr/share/pkgconfig
+  PYTHON=/usr/bin/python2
+
+# Percona pg_stat_monitor Query Performance Monitoring tool
+pg_stat_monitor_version: REL0_9_0_STABLE
+pg_stat_monitor_url: https://github.com/percona/pg_stat_monitor/archive/refs/tags/
+pg_stat_monitor_filename: "pg_stat_monitor-{{ pg_stat_monitor_version }}"
+
+# PGAudit 1.4 (PostgreSQL 12 compatible)
+pg_audit_version: 1.4.1
+pg_audit_url: https://github.com/pgaudit/pgaudit/archive/refs/tags/
+pg_audit_filename: "pgaudit-{{ pg_audit_version }}"
+
+# pg_permission
+pg_permission_version: REL_1_1
+pg_permission_url: https://github.com/cybertec-postgresql/pg_permission/archive/refs/tags/
+pg_permission_filename: "pg_permissions-{{ pg_permission_version }}"
+
+# set_user
+set_user_version: REL2_0_0
+set_user_url: https://github.com/pgaudit/set_user/archive/refs/tags/
+set_user_filename: "set_user-{{ set_user_version }}"
+
+# libLLVM-5.0.so file
+pgsql_libllvm: libLLVM-5.0.so.tar.gz
+
+# hdc ldap credentials
+pgsql_hdc_binddn_user: 'svimhms@nhg.local'
+pgsql_hdc_binddn_pwd:  'Imhh1639'
+
+# gml ldap credentails
+pgsql_gml_binddn_user: 'pg1postgres'
+pgsql_gml_binddn_pwd: 'Dr7q4spU!'
+
+## PgBackRest
+pgbackrest_version: '2.36'
+pgbackrest_name: 'pgbackrest-release-{{ pgbackrest_version }}'
+pgbackrest_file: '{{ pgbackrest_version }}.tar.gz'
+pgbackrest_path: '{{ gml_source_psql_location }}'
+pgbackrest_repo: '{{ postgresql_log }}/pgbackrest'
+pgbackrest_log: '{{ gml_source_path }}/logs/pgbackrest'
+pgbackrest_conf_d: '{{ pgsql_config_path }}/conf.d'
+pgbackrest_archive_cmd_db: '{{ gml_source_path }}/bin/pgbackrest --config={{ pgsql_config_path }}/pgbackrest.conf --stanza={{ db_name }} archive-push %p'
+pgbackrest_archive_cmd_hl7: '{{ gml_source_path }}/bin/pgbackrest --config={{ pgsql_config_path }}/pgbackrest.conf --stanza={{ db_hl7_name }} archive-push %p'
+pgbackrest_url: 'https://github.com/pgbackrest/pgbackrest/archive/refs/tags/release/{{ pgbackrest_file }}'
+pgbackrest_spool_dir: "{{ postgresql_log }}/spool"
+pgbackrest_command: >
+  ./configure
+  --prefix={{ gml_source_psql_location }}
+
+
+# pg_top
+pg_top_version: '4.0.0'
+pg_top_file: 'v{{ pg_top_version }}.tar.gz'
+pg_top_name: 'pg_top-{{ pg_top_version }}'
+pg_top_path: '{{ gml_source_psql_location }}'
+pg_top_url: 'https://github.com/markwkm/pg_top/archive/refs/tags/{{ pg_top_file }}'
+pg_top_command: >
+  cmake -DCMAKE_INSTALL_PREFIX={{ gml_source_psql_location }} CMakeLists.txt
+
+## Backup and Restore
+db_backup_location: /tmp
+db_backup_data:
+db_backup_schema:
+
+# Logrotate Services Param
+pgsql_logrotate_log: "{{ gml_source_path }}/logs/pgsql"
+shared_archive: /export/home/shared_archive
+shared_archive_log_backup_dir: "{{ shared_archive }}/log_backup"
+shared_archive_postgresql_db_backup_dir: "{{ shared_archive }}/postgresql_db_backup/{{ hospital }}/{{ server }}"
+shared_archive_pgsql_log_backup_dir: "{{ shared_archive_log_backup_dir }}/{{ hospital }}/{{ server }}"
+shared_archive_postgresql_hl7_db_backup_dir: "{{ shared_archive }}/postgresql_hl7_db_backup/{{ hospital }}/{{ server }}"
+
+shared_drive: /export/home/shared_drive
+shared_drive_log_backup_dir: "{{ shared_drive }}/log_backup"
+shared_drive_postgresql_db_backup_dir: "{{ shared_drive }}/postgresql_db_backup/{{ hospital }}/{{ server }}"
+shared_drive_pgsql_log_backup_dir: "{{ shared_drive_log_backup_dir }}/{{ hospital }}/{{ server }}"
+shared_drive_postgresql_hl7_db_backup_dir: "{{ shared_drive }}/postgresql_hl7_db_backup/{{ hospital }}/{{ server }}"
+
+## Variables for DB Backup
+db_name: "hms_{{ hospital }}"
+db_port: "{{ pgsql_port }}"
+db_user: "{{ pgsql_dba_usr }}"
+db_data_path: "{{ postgresql_data }}"
+db_backup_dir: "/xpool/{{ hospital }}_dumps/"
+db_backup_script: "db_{{ hospital }}_dump.sh"
+db_backup_file: "hms_{{ hospital }}_db_backup.gz"
+db_backup_log: "db_backup.log"
+db_pgsql_location: "{{ postgresql_bin_path }}/"
+db_backup_full_script: "db_{{ hospital }}_dump_full.sh"
+db_backup_diff_script: "db_{{ hospital }}_dump_diff.sh"
+db_hl7_name: "hmshl7_{{ hospital }}"
+
+## Variables for DB scripts
+db_maintenance_script_path:  "{{ data_partition }}/maintenance_scripts/{{ hospital }}"
+
+# mirth settings (if HL7 DB)
+mirth_dbname: mirthdb
+
+# pgmetrics
+pg_metrics_version: '1.13.1'
+pg_metrics_file: 'pgmetrics_{{ pg_metrics_version }}_linux_amd64'
+pg_metrics_name: 'pgmetrics'
+pg_metrics_path: '{{ gml_source_psql_location }}'
+pg_metrics_url: 'https://github.com/rapidloop/pgmetrics/releases/download/v{{ pg_metrics_version }}/{{ pg_metrics_file }}.tar.gz'
+
+# pgbadger
+pg_badger_version: '12.1'
+pg_badger_name: 'pgbadger'
+pg_badger_file: '{{ pg_badger_version }}'
+pg_badger_path: '{{ gml_source_psql_location }}/{{ pg_badger_name }}'
+pg_badger_url: 'https://github.com/darold/pgbadger/archive/refs/tags/v{{ pg_badger_file }}.tar.gz'
+pg_badger_command: >
+  perl Makefile.PL DESTDIR={{ pg_badger_path }}
