@@ -1,0 +1,13 @@
+[Unit]
+Description=This is php-fpm  Service
+After=syslog.target network.target httpd.service
+
+[Service]
+Type=simple
+User={{ code_user }}
+PIDFile={{ gml_source_path }}/php-fpm.pid
+ExecStart={{ gml_source_path }}/bin/php-fpm --nodaemonize --fpm-config {{ php_fpm_conf_path }}/php-fpm.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+
+[Install]
+WantedBy=multi-user.target

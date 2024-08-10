@@ -1,0 +1,19 @@
+[frontend]
+user = {{ php_fpm_pool_user }}
+group = {{ php_fpm_pool_group }}
+
+listen = {{ front_php_fpm_listen }}
+listen.owner = {{ php_fpm_pool_user }}
+listen.group = {{ php_fpm_pool_group }}
+listen.mode = {{ php_fpm_listen_mode }}
+
+pm = dynamic
+pm.start_servers = 10
+pm.max_children = 25
+pm.min_spare_servers = 2
+pm.max_spare_servers = 10
+
+pm.max_requests = 200
+request_terminate_timeout = 180
+
+php_admin_value[error_log] = {{ front_error_log }}

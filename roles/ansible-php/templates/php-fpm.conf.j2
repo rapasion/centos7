@@ -1,0 +1,12 @@
+;;;;;;;;;;;;;;;;;;;;;
+; FPM Configuration ;
+;;;;;;;;;;;;;;;;;;;;;
+
+include={{ php_fpm_conf_path }}/php-fpm.d/*.conf
+
+;;;;;;;;;;;;;;;;;;
+; Global Options ;
+;;;;;;;;;;;;;;;;;;
+
+[global]
+error_log = {{ php_fpm_logdir }}/{{ ansible_hostname }}_error.log

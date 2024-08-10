@@ -1,0 +1,16 @@
+[Unit]
+Description=Memcached Server
+After=syslog.target
+After=network.target
+
+[Service]
+Type=forking
+User={{ code_user }}
+ExecStart={{ gml_source_path }}/bin/memcached -u {{ code_user }} -d -p {{ memcached_port| default('11211') }} -m {{ memcached_memory| default('512') }} -c {{ memcached_connections | default('256') }} -l 127.0.0.1
+
+# Do not set any timeout value, so that systemd will not kill postmaster
+# during crash recovery.
+TimeoutSec=0
+
+[Install]
+WantedBy=multi-user.target

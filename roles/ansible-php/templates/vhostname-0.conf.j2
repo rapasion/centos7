@@ -1,0 +1,26 @@
+[vhostname-php-fcgi-0]
+user = {{ php_fpm_pool_user }}
+group = {{ php_fpm_pool_group }}
+
+listen = {{ php_fpm_listen }}
+listen.owner = {{ php_fpm_pool_user }}
+listen.group = {{ php_fpm_pool_group }}
+listen.mode = {{ php_fpm_listen_mode }}
+
+
+{% if code_environment is defined and code_environment == 'prod' and server is defined and server =='web'%} 
+pm = {{ php_fpm_pm }}
+pm.start_servers = {{ php_fpm_pm_start_servers }}
+pm.max_children = {{ php_fpm_pm_max_children }}
+pm.min_spare_servers = {{ php_fpm_pm_min_spare_servers }}
+pm.max_spare_servers = {{ php_fpm_pm_max_spare_servers }}
+{% else %}
+pm = dynamic
+pm.start_servers = {{ php_fpm_pm_min_spare_servers }}
+pm.max_children = 50
+pm.min_spare_servers = 5
+pm.max_spare_servers = 20
+{% endif %}
+
+pm.max_requests = {{ php_fpm_pm_max_requests }}
+request_terminate_timeout = {{ php_fpm_request_terminate_timeout }}
