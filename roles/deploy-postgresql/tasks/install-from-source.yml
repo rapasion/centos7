@@ -1,0 +1,390 @@
+---
+
+- name: Check if 'Develop Tools' is installed.
+  become: true
+  become_user: root
+  become_method: sudo
+  register: os_dev_tools
+  shell: sh -c "sudo {{ item }}"
+  with_items:
+    - "yum grouplist Dev* installed ..."
+  tags:
+    - pgsql_install_from_source
+
+- name: Install 'Development tools' if not exists.
+  become: true
+  become_user: root
+  become_method: sudo
+  yum: 
+    name: "@development"
+    state: present
+
+- name: Install 'epel-release' if not exists.
+  become: true
+  become_user: root
+  become_method: sudo
+  yum:
+    name: "epel-release"
+    state: present
+
+- name: Install 'centos-release-scl-rh' if not exists.
+  become: true
+  become_user: root
+  become_method: sudo
+  yum:
+    name: "centos-release-scl-rh"
+    state: present
+  
+- name: Ensure dependencies for building from source are installed (RedHat).
+  become: true
+  become_user: root
+  become_method: sudo
+  package:
+    name:
+      - llvm-toolset-7
+      - llvm-toolset-7-llvm-devel.x86_64
+      - readline-devel
+      - zlib-devel
+      - libxml2-devel
+      - openssl-devel
+      - libicu-devel
+      - systemtap-sdt-devel.x86_64
+      - perl-ExtUtils-Embed
+      - pam
+      - pam-devel
+      - libxslt
+      - libxslt-devel
+      - openldap
+      - openldap-devel
+      - tcl
+      - tcl-devel
+      - e2fsprogs-devel
+      - uuid-devel
+      - libuuid-devel
+      - systemd-devel
+      - python
+      - python-devel
+      - python-psycopg2
+      - libyaml
+      - libyaml-devel
+      - libbsd
+      - libbsd-devel
+      - cmake
+      - bzip2
+      - bzip2-devel
+    state: present
+
+- name: Check if {{ postgres_installer_dir }} exisits.
+  stat:
+    path: "{{ postgres_installer_dir }}"
+  register: register_pgsql_src
+
+- name: Create directory for Postgresql installer directory if it does not exist
+  file:
+    path: "{{ postgres_installer_dir }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+  when:
+    - not register_pgsql_src.stat.exists
+
+- name: Check if Postgres is installed.
+  command: ls -l {{ postgres_source_bin }}
+  changed_when: false
+  failed_when: false
+  register: postgres_installed
+
+- name: Download latest stable version of Postgres
+  get_url:
+    url: "{{ postgres_source_url }}{{ postgres_source_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    checksum: "{{ postgres_source_checksum }}"
+  tags: 
+    - pgsql_download
+    - pgsql_postgres
+
+- name: Download latest stable version of pg_stat_monitor
+  get_url:
+    url: "{{ pg_stat_monitor_url }}{{ pg_stat_monitor_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+  tags: 
+    - pgsql_download
+    - pgsql_monitor
+
+- name: Download latest stable version of pgaudit
+  get_url:
+    url: "{{ pg_audit_url }}{{ pg_audit_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+  tags: 
+    - pgsql_download
+    - pgsql_audit
+
+- name: Download latest stable version of pg_permission
+  get_url:
+    url: "{{ pg_permission_url }}{{ pg_permission_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+  tags: 
+    - pgsql_download
+    - pgsql_permission
+
+- name: Download latest stable version of set_user
+  get_url:
+    url: "{{ set_user_url }}{{ set_user_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+  tags: 
+    - pgsql_download
+    - pgsql_user
+
+- name: Download latest stable version of PgBackRest
+  get_url:
+    url: "{{ pgbackrest_url }}"
+    dest: "{{ postgres_installer_dir }}"
+  tags:
+    - pgsql_download
+    - pgsql_user
+
+- name: Download latest stable version of pg_top
+  get_url:
+    url: "{{ pg_top_url }}"
+    dest: "{{ postgres_installer_dir }}"
+  tags:
+    - pgsql_download
+    - pgsql_user
+
+- name: Download latest stable version of pgmetrics
+  get_url:
+    url: "{{ pg_metrics_url }}"
+    dest: "{{ postgres_installer_dir }}"
+  tags:
+    - pgsql_download
+    - pgsql_user
+
+- name: Download latest stable version of pgbadger
+  get_url:
+    url: "{{ pg_badger_url }}"
+    dest: "{{ postgres_installer_dir }}"
+  tags:
+    - pgsql_download
+    - pgsql_user
+
+- name: Extract downloaded Postgres tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ postgres_source_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags: 
+    - pgsql_extract
+    - pgsql_postgres
+
+- name: Extract downloaded pg_stat_monitor tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pg_stat_monitor_filename }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags: 
+    - pgsql_extract
+    - pgsql_monitor
+
+- name: Extract downloaded pgaudit tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pg_audit_filename }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags: 
+    - pgsql_extract
+    - pgsql_audit
+
+- name: Extract downloaded pg_permission tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pg_permission_filename }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags:
+    - pgsql_extract
+    - pgsql_permission
+
+- name: Extract downloaded set_user tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ set_user_filename }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags:
+    - pgsql_extract
+    - pgsql_user
+
+- name: Extract downloaded PgBackRest tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pgbackrest_name }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags:
+    - pgsql_extract
+    - pgsql_user
+
+- name: Extract downloaded pg_top tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pg_top_name }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags:
+    - pgsql_extract
+    - pgsql_user
+
+- name: Extract downloaded pgmetrics tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pg_metrics_file }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags:
+    - pgsql_extract
+    - pgsql_user
+
+- name: Extract downloaded pgbadger tar.gz file
+  unarchive:
+    src: "{{ postgres_installer_dir }}{{ pg_badger_name }}-{{ pg_badger_version }}.tar.gz"
+    dest: "{{ postgres_installer_dir }}"
+    remote_src: yes
+  tags:
+    - pgsql_extract
+    - pgsql_user
+
+- name: Ensure Postgres installation path exists.
+  file:
+    path: "{{ postgres_install_path }}"
+    state: directory
+    mode: 0755
+  tags: install
+
+#- name: Change Default PostgreSQL Socket PATH.
+#  command: >
+#    sed -i.bak '/#define DEFAULT_PGSOCKET_DIR/ s/tmp/{{ pgsql_socket_path }}/' src/include/pg_config_manual.h
+#    chdir={{ postgres_installer_dir }}/{{ postgres_source_version }}
+#  tags: install
+
+- name: Run configure script.
+  command: >
+    {{ postgres_source_configure_command }}
+    chdir={{ postgres_installer_dir }}/{{ postgres_source_version }}
+  tags: install
+
+- name: Make and install PostgreSQL
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}/{{ postgres_source_version }}
+  with_items:
+    - make MAKELEVEL=0
+    - make install
+  tags: install
+
+- name: Install PG Contrib
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}/{{ postgres_source_version }}/contrib
+  with_items:
+    - gmake PG_CONFIG={{ postgresql_bin_path }}/pg_config
+    - gmake install PG_CONFIG={{ postgresql_bin_path }}/pg_config
+  tags: install
+
+- name: Install pg_stat_monitor
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_stat_monitor_filename }}
+  with_items:
+    - gmake USE_PGXS=1 PG_CONFIG={{ postgresql_bin_path }}/pg_config
+    - gmake USE_PGXS=1 install PG_CONFIG={{ postgresql_bin_path }}/pg_config
+  tags: install
+
+- name: Install pgaudit
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_audit_filename }}
+  with_items:
+    - gmake USE_PGXS=1 PG_CONFIG={{ postgresql_bin_path }}/pg_config
+    - gmake USE_PGXS=1 install PG_CONFIG={{ postgresql_bin_path }}/pg_config
+  tags: install
+
+- name: Install pg_permission
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_permission_filename }}
+  with_items:
+    - gmake USE_PGXS=1 PG_CONFIG={{ postgresql_bin_path }}/pg_config
+    - gmake USE_PGXS=1 install PG_CONFIG={{ postgresql_bin_path }}/pg_config
+  become: true
+  tags: install
+
+- name: Install set_user
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ set_user_filename }}
+  with_items:
+    - gmake USE_PGXS=1 PG_CONFIG={{ postgresql_bin_path }}/pg_config
+    - gmake USE_PGXS=1 install PG_CONFIG={{ postgresql_bin_path }}/pg_config
+  become: true
+  tags: install
+
+- name: Compile PgBackRest
+  command: >
+    {{ pgbackrest_command }}
+    chdir={{ postgres_installer_dir }}{{ pgbackrest_name }}/src/
+  tags:
+    - install
+
+- name: Make and Install PgBackRest
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pgbackrest_name }}/src/
+  with_items:
+    - gmake
+    - gmake install
+  
+- name: Compile pg_top
+  command: >
+    {{ pg_top_command }}
+    chdir={{ postgres_installer_dir }}{{ pg_top_name }}/
+  tags:
+    - install
+
+- name: Make and Install pg_top
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_top_name }}/
+  with_items:
+    - gmake
+    - gmake install
+
+- name: Copy over pgmetrics
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_metrics_file }}/
+  with_items:
+    - cp {{ pg_metrics_name }} {{ postgresql_bin_path }}/
+  tags:
+    - install
+
+- name: Compile pgbadger
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_badger_name }}-{{ pg_badger_version }}/
+  with_items:
+    - mkdir "{{ pg_badger_path }}"
+    - "{{ pg_badger_command }}"
+  tags:
+    - install
+
+- name: Make and Install pgbadger
+  command: >
+    {{ item }}
+    chdir={{ postgres_installer_dir }}{{ pg_badger_name }}-{{ pg_badger_version }}/
+  with_items:
+    - gmake
+    - gmake install
+
+- name: Change ownership of PostgreSQL installation dir to PostgreSQL user
+  file:
+    dest: "{{ postgres_install_path }}"
+    owner: "{{ code_user }}"
+    mode: "0750"
+    group: "{{ code_user }}"
+    recurse: 'yes'

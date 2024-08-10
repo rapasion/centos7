@@ -1,0 +1,10 @@
+---
+
+- name: Show templating Results
+  debug:
+    msg: "{{ lookup('template', 'hmsdb.sql') }}"
+
+- name: Template hmsdb.sql
+  template:
+    dest: "/tmp/hmsdb_{{ hospital }}.sql"
+    src: hmsdb.sql

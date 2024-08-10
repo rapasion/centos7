@@ -1,0 +1,347 @@
+---
+
+- name: Check {{ shared_archive_postgresql_db_backup_dir }} folder if exists (HMS)
+  stat:
+    path: "{{ shared_archive }}/postgresql_db_backup/{{ hospital }}"
+  register: register_shared_archive_postgresql_db_backup_dir
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }} folder exist (HMS)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  loop:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1'
+     - '{{ shared_archive_postgresql_db_backup_dir }}2'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_backup_dir.stat.exists
+
+### HMS DB server 1
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/monday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/monday"
+  register: register_shared_archive_postgresql_db_monday_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/monday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/monday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_monday_backup_dir1.stat.exists
+
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/tuesday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/tuesday"
+  register: register_shared_archive_postgresql_db_tuesday_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/tuesday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/tuesday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_tuesday_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/wednesday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/wednesday"
+  register: register_shared_archive_postgresql_db_wednesday_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/wednesday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/wednesday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_wednesday_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/thursday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/thursday"
+  register: register_shared_archive_postgresql_db_thursday_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/thursday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/thursday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_thursday_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/friday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/friday"
+  register: register_shared_archive_postgresql_db_friday_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/friday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/friday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_friday_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/saturday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/saturday"
+  register: register_shared_archive_postgresql_db_saturday_backup_dir1
+ 
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/saturday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/saturday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_saturday_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/sunday folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/sunday"
+  register: register_shared_archive_postgresql_db_sunday_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/sunday folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/sunday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_sunday_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/daily folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/daily"
+  register: register_shared_archive_postgresql_db_daily_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/daily folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/daily'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_daily_backup_dir1.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}1/monthly folder if exists (HMS DB Set A)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}1/monthly"
+  register: register_shared_archive_postgresql_db_monthly_backup_dir1
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}1/monthly folder exist (HMS DB Set A)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}1/monthly'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_monthly_backup_dir1.stat.exists
+	
+
+### HMS DB server 2
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/monday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/monday"
+  register: register_shared_archive_postgresql_db_monday_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/monday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/monday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_monday_backup_dir2.stat.exists
+
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/tuesday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/tuesday"
+  register: register_shared_archive_postgresql_db_tuesday_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/tuesday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/tuesday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_tuesday_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/wednesday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/wednesday"
+  register: register_shared_archive_postgresql_db_wednesday_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/wednesday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/wednesday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_wednesday_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/thursday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/thursday"
+  register: register_shared_archive_postgresql_db_thursday_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/thursday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/thursday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_thursday_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/friday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/friday"
+  register: register_shared_archive_postgresql_db_friday_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/friday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/friday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_friday_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/saturday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/saturday"
+  register: register_shared_archive_postgresql_db_saturday_backup_dir2
+ 
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/saturday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/saturday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_saturday_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/sunday folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/sunday"
+  register: register_shared_archive_postgresql_db_sunday_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/sunday folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/sunday'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_sunday_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/daily folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/daily"
+  register: register_shared_archive_postgresql_db_daily_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/daily folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/daily'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_daily_backup_dir2.stat.exists
+	
+- name: Check {{ shared_archive_postgresql_db_backup_dir }}2/monthly folder if exists (HMS DB Set B)
+  stat:
+    path: "{{ shared_archive_postgresql_db_backup_dir }}2/monthly"
+  register: register_shared_archive_postgresql_db_monthly_backup_dir2
+
+- name: Ensure {{ shared_archive_postgresql_db_backup_dir }}2/monthly folder exist (HMS DB Set B)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  with_items:
+     - '{{ shared_archive_postgresql_db_backup_dir }}2/monthly'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_archive_postgresql_db_monthly_backup_dir2.stat.exists

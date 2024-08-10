@@ -1,0 +1,36 @@
+- name: Check failed Postgresql Version
+  shell: "{{ gml_source_path }}/bin/psql -V | awk '{print $3}'"
+  register: failed_pgsql_version
+
+- name: Stop Postgresql services
+  shell: sh -c "{{ sh_pgsql_stop }}"
+
+- name: Rollback Postgresql Version
+  unarchive:
+    src: "{{ gml_source_path }}/{{ postgres_source_version }}.tar.gz"
+    dest: "{{ gml_source_path }}"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    remote_src: yes
+    
+- name: Ensure Postgresql executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ postgres_install_path }}/bin/*"
+
+- name: Start Postgresql services
+  shell: sh -c "{{ sh_pgsql_start }}"
+
+- name: Remove failed Postgresql folder directory
+  become: yes
+  become_user: root
+  become_method: sudo
+  file:
+    state: absent
+    path: "{{ gml_source_path }}/postgres-{{failed_pgsql_version.stdout}}"

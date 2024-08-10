@@ -1,1 +1,51 @@
-fd
+---
+
+- name: Setup Folders for HMS DB Archives
+  block: 
+  - name: Ensure {{ shared_drive }}/postgresql_db_backup/{{ hospital }} folders exist (HMS)
+    shell: sh -c "{{ item }}"
+    with_items:
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }} ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}'
+
+  - name: Ensure {{ shared_drive_postgresql_db_backup_dir }} folder has correct permissions (HMS)
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}'
+
+  - name: Ensure {{ shared_drive }}/postgresql_db_backup/{{ hospital }} folders exist (HMS)
+    shell: sh -c "{{ item }}"
+    with_items:
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/daily  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/daily'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/tuesday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/tuesday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/wednesday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/wednesday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/thursday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/thursday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/friday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/friday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/saturday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/saturday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/sunday  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/sunday'
+      - '[[ -d {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monthly  ]] || mkdir {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monthly'
+
+  - name: Ensure {{ shared_drive }}/postgresql_db_backup/{{ hospital }} have correct permissions
+    shell: sh -c "{{ item }}"
+    with_items:
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/daily'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/tuesday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/wednesday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/thursday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/friday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/saturday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/sunday'
+      - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monthly'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/daily'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/tuesday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/wednesday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/thursday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/friday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/saturday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/sunday'
+      - 'sudo chmod 750 {{ shared_drive }}/postgresql_db_backup/{{ hospital }}/monthly'
+  when:
+    - server is defined and server == 'db'

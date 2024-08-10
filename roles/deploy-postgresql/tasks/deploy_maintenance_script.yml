@@ -1,0 +1,112 @@
+---
+
+- name: Check DB script folder exists.
+  stat:
+    path: "{{ db_maintenance_script_path }}"
+  register: register_db_maintenance_folder
+
+- name: Create DB script folder
+  file:
+    path: "{{ db_maintenance_script_path }}"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_db_maintenance_folder.stat.exists 
+
+- name: Create DB maintenance logs folder
+  stat:
+    path: "{{ db_maintenance_script_path }}/logs"
+  register: register_db_maintenance_log_folder
+
+- name: Create DB maintenance logs folder
+  file:
+    path: "{{ db_maintenance_script_path }}/logs"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_db_maintenance_log_folder.stat.exists 
+
+- name: Deploying DB script
+  block:
+  - name: Deploy HMS DB script (Deletion, Maintenance Scripts)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ db_maintenance_script_path }}"
+    with_items:
+      - "04-{{ hospital }}_delete.sh"
+      - "{{ hospital }}_pgsql_hms_tables.txt"
+      - "{{ hospital }}_pgsql_reindex_hms.sh"
+      - "{{ hospital }}_pgsql_vacuum_hms.sh"
+      - "Maintenance_HMS.sh"
+    when:
+      - server is defined and server == 'db'
+
+  - name: Deploy HMS DB script (Archiving)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ db_maintenance_script_path }}"
+    with_items:
+      - "01-{{ hospital }}_create_table.sh"
+      - "02-{{ hospital }}_dump.sh"
+    when:
+      - server is defined and server == 'db' and code_environment == 'archive'
+      - hospital is defined and hospital == 'nuh'
+
+  - name: Deploy HL7 DB script (Archiving, Dumping, Deletion)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ db_maintenance_script_path }}"
+    with_items:
+      - "05-{{ hospital }}_hl7_archive.sh"
+      - "06-{{ hospital }}_hl7_dump.sh"
+      - "07-{{ hospital }}_hl7_delete.sh"
+      - "{{ hospital }}_pgsql_hl7_tables.txt"
+      - "{{ hospital }}_pgsql_reindex_hl7.sh"
+      - "{{ hospital }}_pgsql_vacuum_hl7.sh"
+      - "Archive_Dump_HL7.sh"
+      - "Maintenance_HL7.sh"
+    when:
+      - server is defined and server == 'hl7'
+  when:
+    - cluster != 'jhs'
+
+- name: Deploying DB script (JHS) 
+  block:
+  - name: Deploy HMS DB script (Archiving, Dumping, Deletion) - JHS
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ cluster}}/{{ hospital }}/{{ item }}"
+      dest: "{{ db_maintenance_script_path }}"
+    with_items:
+      - "03-{{ hospital }}_delete.sh"
+      - "{{ hospital }}_pgsql_tables.txt"
+      - "{{ hospital }}_pgsql_reindex.sh"
+      - "{{ hospital }}_pgsql_vacuum_hms.sh"
+      - "Maintenance_HMS.sh"
+    when:
+      - server is defined and server == 'db'
+
+  - name: Deploy HL7 DB script (Archiving, Dumping, Deletion) - JHS
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ cluster }}/{{ item }}"
+      dest: "{{ data_partition }}/maintenance_scripts/{{ cluster }}/"
+    with_items:
+      - "04-{{ cluster }}_hl7_archive.sh"
+      - "05-{{ cluster }}_hl7_dump.sh"
+      - "06-{{ cluster }}_hl7_delete.sh"
+      - "Archive_Dump_HL7.sh"
+      - "Maintenance_HL7.sh"
+    when:
+      - server is defined and server == 'hl7'
+  when:
+    - cluster == 'jhs'
+
+- name: Set correct ownership on '{{ db_maintenance_script_path }}'
+  shell: sh -c "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ db_maintenance_script_path }}"
+
+- name: Ensure correct permission on '{{ db_maintenance_script_path }}'
+  shell: sh -c "sudo chmod -R 750 {{ db_maintenance_script_path }}"
+
+- name: Ensure scripts syntax error fixed
+  shell: sh -c "sudo sed -i 's/\r//' {{ db_maintenance_script_path }}/*.sh"

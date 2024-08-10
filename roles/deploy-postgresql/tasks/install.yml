@@ -1,0 +1,149 @@
+---
+
+- name: Check libLLVM-5.0.so if exists.
+  shell: sh -c "ldconfig -p | grep libLLVM"
+  register: register_libLLVM
+  failed_when: false
+
+- name: Check libbsd if exists.
+  shell: sh -c "ldconfig -p | grep libbsd"
+  register: register_libbsd
+  failed_when: false
+
+- name: Check libbsd rpm if exists.
+  stat:
+    path: "{{ playbook_dir }}/downloads/libbsd-0.8.3-1.el7.x86_64.rpm"
+  register: register_libbsd_rpm
+
+- name: Check gml_source file under ld.so.conf.d folder
+  stat:
+    path: "/etc/ld.so.conf.d/gml_source.conf"
+  register: gml_source_ld
+
+- name: Ensure postgres folder exist
+  file:
+    path: "{{ postgres_install_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+    recurse: yes
+
+- name: Extract PostgreSQL Source file
+  unarchive:
+    src: "{{ playbook_dir }}/{{ compressed_dir }}/{{ gml_source_psql_file }}"
+    dest: "{{ postgres_install_path }}"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+    remote_src: yes
+
+- name: Extract libLLVM-5.0.so
+  unarchive:
+    src: "{{ playbook_dir }}/{{ compressed_dir }}/libLLVM-5.0.so.tar.gz"
+    dest: "{{ gml_source_path }}/lib"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+    remote_src: yes
+  when:
+    - register_libLLVM.rc != 0
+
+- name: Install libbsd
+  shell: sh -c "sudo rpm -ivh {{ item }}"
+  with_items:
+    - "{{ playbook_dir }}/downloads/libbsd-0.8.3-1.el7.x86_64.rpm"
+  when:
+    - register_libbsd.rc !=0
+    - register_libbsd_rpm.stat.exists
+
+- name: Create gml_source.conf file.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "echo '{{ gml_source_path }}/lib' > gml_source.conf"
+    - "sudo vi gml_source.conf -c ':w /etc/ld.so.conf.d/gml_source.conf' -c ':q!'"
+    - "rm -f gml_source.conf"
+  when:
+    - not gml_source_ld.stat.exists
+
+- name: Check gml_source/bin folder if exists.
+  stat:
+    path: "{{ gml_source_path }}/bin"
+  register: gml_source
+
+- name: Check gml_source/lib folder if exists.
+  stat:
+    path: "{{ gml_source_path }}/lib"
+  register: gml_source_lib
+
+- name: Create gml_source/bin folder.
+  file:
+    path: "{{ gml_source_path }}/bin"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+    recurse: yes
+  when:
+    - not gml_source.stat.exists
+
+- name: Create gml_source/lib folder.
+  file:
+    path: "{{ gml_source_path }}/lib"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+    recurse: yes
+  when:
+    - not gml_source_lib.stat.exists
+
+- name: Ensure Postgres executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ gml_source_psql_location }}/bin/*"
+  tags: symlink
+
+- name: Ensure PGBadger executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ gml_source_psql_location }}/pgbadger/usr/local/bin/*"
+  tags: symlink
+
+- name: Ensure Postgres libs are symlinked into a standard gml_source/lib path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/lib/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ gml_source_psql_location }}/lib/*"
+  tags: symlink
+
+- name: Set selinux context for psql
+  shell: "sudo semanage fcontext -a -t lib_t '{{gml_source_psql_location}}/lib(/.*)?'"
+  tags: apache-selinux
+
+- name: restore-selinux-install-context
+  shell: sh -c "{{ selinux_restorecon }} {{ gml_source_path }}"
+  tags:
+    - apache-selinux
+  
+- name: Reload environment.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo vi /etc/ld.so.conf.d/gml_source.conf -c ':r!ldconfig' -c ':q!'"

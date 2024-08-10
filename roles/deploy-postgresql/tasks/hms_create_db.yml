@@ -1,0 +1,67 @@
+---
+
+- name: Check if PostgreSQL service is running.
+  command: systemctl status "{{ sh_pgsql_svc }}"
+  register: pgsql_svc_status
+
+- name: Check if can connect to PostgreSQL.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ pgsql_port }} -qAtXc "SELECT 1"'
+  register: pgsql_db_status
+
+- name: Template hmsdb.sql
+  template:
+    dest: "/tmp/hmsdb_{{ hospital }}.sql"
+    src: hmsdb.sql
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'db'
+
+- name: Create HMS DB.
+  shell: sh -c '{{ gml_source_path }}/bin/createdb -U {{ postgresql_user }} -p {{ pgsql_port }} hms_{{ hospital }}'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'db'
+
+- name: Enable Extension pg_stat_statements in HMS DB.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d hms_{{ hospital }} -p {{ pgsql_port }} -qAtXc "CREATE EXTENSION pg_stat_statements;"'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'db'
+
+- name: Restore DB Schema to HMS DB.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d hms_{{ hospital }} -p {{ pgsql_port }} < /tmp/hmsdb_{{ hospital }}.sql'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'db'
+
+## RESTORE WHOLE DB
+#- name: Ensure ownership of HMS compressed DB file on {{ db_backup_location }} is {{ postgresql_user }}
+#  command: "{{ item }}"
+#  with_items:
+#    - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ db_backup_location }}/{{ db_backup_data }}'
+#    - 'sudo chmod 750 {{ db_backup_location }}/{{ db_backup_data }}'
+
+#- name: Restore HMS compressed DB.
+#  shell: sh -c 'gunzip < {{ db_backup_location }}/{{ db_backup_data }} | {{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d hms_{{ hospital }} -p {{ pgsql_port }} &'
+#  when:
+#    - pgsql_svc_status.rc in [0]
+#    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+#    - server is defined and server == 'db'
+
+## RESTORE DB SCHEMA ONLY
+#- name: Ensure ownership of HMS compressed schema file on {{ db_backup_location }} is {{ postgresql_user }}
+#  command: "{{ item }}"
+#  with_items:
+#    - 'sudo chown {{ postgresql_user }}:{{ code_user }} {{ db_backup_location }}/{{ db_backup_schema }}'
+#    - 'sudo chmod 750 {{ db_backup_location }}/{{ db_backup_schema }}'
+
+#- name: Restore HMS DB schema
+#  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d hms_{{ hospital }} -p {{ pgsql_port }} < {{ db_backup_location }}/{{ db_backup_schema }}'
+#  when:
+#    - pgsql_svc_status.rc in [0]
+#    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+#    - server is defined and server == 'db'

@@ -1,0 +1,164 @@
+---
+
+- name: Check startup folder exists.
+  stat:
+    path: "{{ gml_source_path }}/startup"
+  register: register_startup_folder
+  tags: startup
+
+- name: Check symlink for systemd Postgresql
+  stat:
+    path: "/etc/systemd/system/multi-user.target.wants/postgresql12.service"
+  register: register_systemd_pgsql
+  tags: startup
+
+#- name: Check symlink for systemd Full DB Backup Service
+#  stat:
+#    path: /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.service
+#  register: register_systemd_full_db_backup_service
+#  tags: startup
+
+#- name: Check symlink for systemd Full DB Backup Timer
+#  stat:
+#    path: /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.timer
+#  register: register_systemd_full_db_backup_timer
+#  tags: startup
+
+#- name: Check symlink for systemd Diff DB Backup Service
+#  stat:
+#    path: /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.service
+#  register: register_systemd_diff_db_backup_service
+#  tags: startup
+
+#- name: Check symlink for systemd Diff DB Backup Timer
+#  stat:
+#    path: /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.timer
+#  register: register_systemd_diff_db_backup_timer
+#  tags: startup
+
+- name: Create startup folder.
+  file:
+    path: "{{ gml_source_path }}/startup"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_startup_folder.stat.exists
+  tags: startup
+
+- name: PostgreSQL startup script
+  template:
+    src: postgresql12.service.j2
+    dest: "{{ gml_source_path }}/startup/postgresql12.service"
+  tags: startup
+
+- name: Copy PostgreSQL startup script to systemd
+  command: 'sudo cp -f {{ gml_source_path }}/startup/postgresql12.service /usr/lib/systemd/system/'
+  tags: startup
+
+- name: Create link for systemd - PostgreSQL
+  command: "{{ item }}"
+  with_items:
+    - 'sudo ln -s /usr/lib/systemd/system/postgresql12.service /etc/systemd/system/multi-user.target.wants/postgresql12.service'
+    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/postgresql12.service'
+    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/postgresql12.service'
+  when: not register_systemd_pgsql.stat.exists
+  tags: startup
+
+#- name: Export Full DB Backup Service.
+#  template:
+#    src: "templates/service/db_backup_full.service.j2"
+#    dest: "{{ gml_source_path }}/startup/db_backup_full.service.j2"
+#  tags: startup
+
+#- name: Copy Full DB Backup Service to systemd
+#  command: 'sudo cp -f {{ gml_source_path }}/startup/db_backup_full.service.j2 /usr/lib/systemd/system/db_backup_full_{{ hospital }}.service'
+#  tags: startup
+
+#- name: Create link from systemd - Full DB Backup Service
+#  command: "{{ item }}"
+#  with_items:
+#    - 'sudo ln -s /usr/lib/systemd/system/db_backup_full_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.service'
+#    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.service'
+#    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.service'
+#  when: not register_systemd_full_db_backup_service.stat.exists
+#  tags: startup
+
+#- name: Export Full DB Backup Timer.
+#  template:
+#    src: "templates/service/db_backup_full.timer.j2"
+#    dest: "{{ gml_source_path }}/startup/db_backup_full.timer.j2"
+#  tags: startup
+
+#- name: Copy Full DB Backup Timer to systemd
+#  command: 'sudo cp -f {{ gml_source_path }}/startup/db_backup_full.timer.j2 /usr/lib/systemd/system/db_backup_full_{{ hospital }}.timer'
+#  tags: startup
+
+#- name: Create link from systemd - Full DB Backup Timer
+#  command: "{{ item }}"
+#  with_items:
+#    - 'sudo ln -s /usr/lib/systemd/system/db_backup_full_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.timer'
+#    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.timer'
+#    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_full_{{ hospital }}.timer'
+#  when: not register_systemd_full_db_backup_timer.stat.exists
+#  tags: startup
+
+#- name: Export Diff DB Backup Service.
+#  template:
+#    src: "templates/service/db_backup_diff.service.j2"
+#    dest: "{{ gml_source_path }}/startup/db_backup_diff.service.j2"
+#  tags: startup
+
+#- name: Copy Diff DB Backup Service to systemd
+#  command: 'sudo cp -f {{ gml_source_path }}/startup/db_backup_diff.service.j2 /usr/lib/systemd/system/db_backup_diff_{{ hospital }}.service'
+#  tags: startup
+
+#- name: Create link from systemd - Diff DB Backup Service
+#  command: "{{ item }}"
+#  with_items:
+#    - 'sudo ln -s /usr/lib/systemd/system/db_backup_diff_{{ hospital }}.service /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.service'
+#    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.service'
+#    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.service'
+#  when: not register_systemd_diff_db_backup_service.stat.exists
+#  tags: startup
+
+#- name: Export Diff DB Backup Timer.
+#  template:
+#    src: "templates/service/db_backup_diff.timer.j2"
+#    dest: "{{ gml_source_path }}/startup/db_backup_diff.timer.j2"
+#  tags: startup
+
+#- name: Copy Diff DB Backup Timer to systemd
+#  command: 'sudo cp -f {{ gml_source_path }}/startup/db_backup_diff.timer.j2 /usr/lib/systemd/system/db_backup_diff_{{ hospital }}.timer'
+#  tags: startup
+
+#- name: Create link from systemd - Diff DB Backup Timer
+#  command: "{{ item }}"
+#  with_items:
+#    - 'sudo ln -s /usr/lib/systemd/system/db_backup_diff_{{ hospital }}.timer /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.timer'
+#    - 'sudo chown root:root /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.timer'
+#    - 'sudo chmod 750 /etc/systemd/system/multi-user.target.wants/db_backup_diff_{{ hospital }}.timer'
+#  when: not register_systemd_diff_db_backup_timer.stat.exists
+#  tags: startup
+
+- name: Reload systemd
+  command: "{{ sh_systemctl }} daemon-reload"
+  tags: startup
+
+#- name: Enable Full DB Backup Service
+#  shell: sh -c "{{ sh_db_backup_full_svc_enable }}"
+
+#- name: Start Full DB Backup Timer
+#  shell: sh -c "{{ sh_db_backup_full_tmr_start }}"
+
+#- name: Enable Diff DB Backup Service
+#  shell: sh -c "{{ sh_db_backup_diff_svc_enable }}"
+
+#- name: Start Diff DB Backup Timer
+#  shell: sh -c "{{ sh_db_backup_diff_tmr_start }}"
+
+- name: Enable PostgreSQL in Systemctl
+  shell: sh -c "{{ sh_pgsql_enable }}"
+
+- name: Start PostgreSQL in Systemctl
+  shell: sh -c "{{ sh_pgsql_start }}"

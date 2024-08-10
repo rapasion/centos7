@@ -1,0 +1,207 @@
+---
+
+- import_tasks: install.yml
+  when:
+    - install_psql == 'yes'
+  tags:
+    - pgsql_deploy
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+
+- import_tasks: deploy_pgpass.yml
+  tags:
+    - never
+
+- import_tasks: configure.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  notify: enable postgresql
+  tags:
+    - pgsql_config
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+    - never
+
+- import_tasks: initialize.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  notify: start postgresql  
+  tags:
+    - pgsql_initialize
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+    - never
+
+- import_tasks: startup.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  notify: start postgresql
+  tags:
+    - pgsql_startup
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+    - never
+
+- import_tasks: hms_roles_permission.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  tags:
+   - pgsql_create
+   - install_from_scratch_hms
+   - never
+
+- import_tasks: hms_create_db.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  tags:
+   - db_schema_create
+   - install_from_scratch_hms
+   - never
+
+- import_tasks: hl7_create_db.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  tags:
+   - hl7_db_schema_create
+   - install_from_scratch_hl7
+   - never
+
+- import_tasks: hl7_roles_permission.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  tags:
+   - hl7_pgsql_create
+   - install_from_scratch_hl7
+   - never
+
+#- import_tasks: backup_db.yml
+#  become: yes
+#  become_user: "{{ code_user }}"
+#  become_method: sudo
+#  tags: 
+#    - backup_db_create
+#    - install_from_scratch_hms
+#    - install_from_scratch_hl7
+#    - never
+#  when: cluster != 'jhs'
+
+#- import_tasks: backup_db_jhs.yml
+#  become: yes
+#  become_user: "{{ code_user }}"
+#  become_method: sudo
+#  tags: 
+#    - backup_db_create_jhs
+#    - install_from_scratch_hl7
+#    - install_from_scratch_hms
+#    - never
+#  when: cluster == 'jhs'
+
+- import_tasks: pgbackrest_setup.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags: 
+    - pgbackrest_setup
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+    - never
+  when: cluster != 'jhs'
+  
+- import_tasks: pgbackrest_setup_jhs.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags: 
+    - pgbackrest_setup
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+    - never
+  when: cluster == 'jhs'
+
+- import_tasks: pgbackrest_stanza_create.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags: 
+    - pgbackrest_stanza_create
+    - install_from_scratch_hms
+    - never
+  when: 
+    - server == 'db'
+
+- import_tasks: deploy_maintenance_script.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  tags: 
+    - deploy_db_scripts
+    - install_from_scratch_hms
+    - install_from_scratch_hl7
+    - never
+
+- import_tasks: install-from-source.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags:
+   - pgsql_install
+   - never
+
+- import_tasks: compress-psql.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags:
+   - pgsql_install
+   - never
+
+- import_tasks: export_hmsdb_sql.yml
+  tags:
+    - export_hmsdb
+    - never
+
+- import_tasks: archive_setup_folder.yml
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  become_flags: 'su -c'
+  tags:
+    - pgsql_backup_folder
+    - never
+
+- import_tasks: upgrade_pgsql.yml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags:
+    - upgrade_pgsql
+    - never
+
+- import_tasks: rollback_pgsql.yaml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags:
+    - rollback_pgsql
+    - never
+
+- import_tasks: pre-upgrade_pgsql.yaml
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  tags:
+    - pre-upgrade_pgsql
+    - never

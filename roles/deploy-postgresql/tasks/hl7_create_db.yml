@@ -1,0 +1,83 @@
+---
+
+- name: Check if PostgreSQL service is running.
+  command: systemctl status "{{ sh_pgsql_svc }}"
+  register: pgsql_svc_status
+
+- name: Check if can connect to PostgreSQL.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -qAtXc "SELECT 1"'
+  register: pgsql_db_status
+
+- name: Check if HL7 DB is created.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -lqt -U {{ postgresql_user }} -p {{ hl7_pgsql_port }} | cut -d \| -f 1 | grep -qw hmshl7_{{ hospital }}'
+  register: pgsql_hl7db_status
+  ignore_errors: true
+
+- name: Create HL7 DB.
+  shell: sh -c '{{ gml_source_path }}/bin/createdb -U {{ postgresql_user }} -p {{ hl7_pgsql_port }} hmshl7_{{ hospital }}'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_hl7db_status.rc in [1]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'hl7'
+
+- name: Enable Extension pg_stat_statements in HL7 DB.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d hmshl7_{{ hospital }} -p {{ hl7_pgsql_port }} -qAtXc "CREATE EXTENSION pg_stat_statements;"'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_hl7db_status.rc in [1]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'hl7'
+
+- name: Template hmshl7.sql.
+  template:
+    dest: "/tmp/hmshl7_{{ hospital }}.sql"
+    src: hmshl7.sql
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_hl7db_status.rc in [1]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'hl7'
+
+- name: Restore DB schema to HL7 DB.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d hmshl7_{{ hospital }} -p {{ hl7_pgsql_port }} < /tmp/hmshl7_{{ hospital }}.sql'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_hl7db_status.rc in [1]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'hl7'
+
+- name: Check if Mirth DB is created.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -lqt -U {{ postgresql_user }} -p {{ hl7_pgsql_port }} | cut -d \| -f 1 | grep -qw {{ mirth_dbname }}'
+  register: pgsql_mirthdb_status
+  ignore_errors: true
+
+- name: Create mirth DB.
+  shell: sh -c '{{ gml_source_path }}/bin/createdb -U {{ postgresql_user }} -p {{ hl7_pgsql_port }} {{ mirth_dbname }}'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_mirthdb_status.rc in [1]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'hl7'
+
+- name: Enable Extension pg_stat_statements in mirth DB.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d {{ mirth_dbname }} -p {{ hl7_pgsql_port }} -qAtXc "CREATE EXTENSION pg_stat_statements;"'
+  when:
+    - pgsql_svc_status.rc in [0]
+    - pgsql_mirthdb_status.rc in [1]
+    - pgsql_db_status.rc in [0] and pgsql_db_status.stdout == '1'
+    - server is defined and server == 'hl7'
+
+- name: Export {{ pgsql_app_usr }} grant SQL script.
+  copy:
+    dest: "/tmp/grant_{{ pgsql_app_usr }}.sql"
+    content: |
+      GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON ALL TABLES IN SCHEMA public TO {{ pgsql_app_usr }};
+      GRANT USAGE ON SCHEMA public TO {{ pgsql_app_usr }};
+      GRANT USAGE ON SCHEMA public TO {{ pgsql_dba_usr }};
+      GRANT USAGE ON SCHEMA public TO {{ pgsql_read_usr }};
+      GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO {{ pgsql_app_usr }};
+      GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO {{ pgsql_app_usr }};
+
+- name: Grant {{ pgsql_app_usr }} Privileges to mirth DB.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d {{ mirth_dbname }} -p {{ hl7_pgsql_port }} -f /tmp/grant_{{ pgsql_app_usr }}.sql'

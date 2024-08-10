@@ -1,0 +1,346 @@
+---
+
+- name: Check .pgpass if exists
+  stat:
+    path: /ypool/.pgpass
+  register: register_pgpass
+  when:
+    - server is defined
+    - server == 'db' or server == 'hl7'
+
+- name: Check {{ data_partition }} if exists 
+  stat:
+    path: "{{ data_partition }}"
+  register: pgsql_ypool
+
+- name: Ensure {{ data_partition }} permissions are correct
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chmod -R 750 {{ data_partition }}"
+    - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ data_partition }}"
+  when:
+    - server is defined
+    - server == 'db' or server == 'hl7'
+
+- name: Check {{ log_partition }} if exists 
+  stat:
+    path: "{{ log_partition }}"
+  register: pgsql_xpool
+
+- name: Ensure {{ log_partition }} permissions are correct
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chmod -R 750 {{ log_partition }}"
+    - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ log_partition }}"
+  when:
+    - server is defined
+    - server == 'db' or server == 'hl7'
+    - cluster == 'nuh' or cluster == 'ttsh'
+
+- name: Storing PGPASS info (file not existed)
+  block:
+  - name: Ensure .pgpass file exist in /ypool
+    shell: sh -c "touch /ypool/.pgpass"
+
+  - name: Store connection information to {{ postgresql_user }} .pgpass file 
+    lineinfile:
+      path: "/ypool/.pgpass"
+      state: present
+      line: "{{ item }}"
+    with_items:
+      - "{{ db_set_a }}:{{ pgsql_port }}:{{ pgsql_rep_usr }}:5tr@16htf0rw@rd"
+      - "{{ db_set_b }}:{{ pgsql_port }}:{{ pgsql_rep_usr }}:5tr@16htf0rw@rd"
+    when: 
+      - db_set_a is defined
+      - db_set_b is defined
+
+  - name: Change ownership of /ypool/.pgpass file
+    shell: sh -c "{{ item }}"
+    with_items:
+      - "sudo chown {{ postgresql_user }}:{{ code_user }} /ypool/.pgpass"
+      - "sudo chmod 600 /ypool/.pgpass"
+  when:
+    - server == 'db'
+    - server is defined
+    - not register_pgpass.stat.exists
+
+- name: Storing PGPASS info (file existed)
+  block:
+  - name: Store connection information to {{ postgresql_user }} .pgpass file 
+    lineinfile:
+      path: "/ypool/.pgpass"
+      state: present
+      line: "{{ item }}"
+    with_items:
+      - "{{ db_set_a }}:{{ pgsql_port }}:{{ pgsql_rep_usr }}:5tr@16htf0rw@rd"
+      - "{{ db_set_b }}:{{ pgsql_port }}:{{ pgsql_rep_usr }}:5tr@16htf0rw@rd"
+    when: 
+      - db_set_a is defined
+      - db_set_b is defined
+  when:
+    - server == 'db'
+    - server is defined
+    - register_pgpass.stat.exists
+
+- name: For HL7 DB (JHS / KTPH)
+  block:
+    - name: Check {{ postgresql_data }} is exists (HL7).
+      stat:
+        path: "{{ postgresql_data }}"
+      register: pgsql_data
+
+    - name: Create {{ postgresql_data }} folder (HL7).
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ postgresql_data }}"
+        - "chmod -R 750 {{ postgresql_data }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ postgresql_data }}"
+      when:
+        - not pgsql_data.stat.exists
+
+    - name: Check {{ postgresql_log }} is exists (HL7).
+      stat:
+        path: "{{ hl7_postgresql_log }}"
+      register: pgsql_log
+ 
+    - name: Create {{ hl7_postgresql_log }} folder (HL7).
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir -p {{ hl7_postgresql_log }}"
+        - "chmod -R 750 {{ hl7_postgresql_log }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ hl7_postgresql_log }}"
+      when:
+        - not pgsql_log.stat.exists
+
+    - name: Check {{ hl7_pgsql_log_path }} is exists (HL7).
+      stat:
+        path: "{{ hl7_pgsql_log_path }}"
+      register: pg_log
+
+    - name: Create {{ hl7_pgsql_log_path }} folder (HL7).
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ hl7_pgsql_log_path }}"
+        - "chmod -R 750 {{ hl7_pgsql_log_path }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ hl7_pgsql_log_path }}"
+      when:
+        - not pgsql_log.stat.exists
+
+    - name: Check {{ hl7_pgsql_wal_path }} if exsists (HL7).
+      stat:
+        path: "{{ hl7_pgsql_wal_path }}"
+      register: pg_wal
+
+    - name: Create {{ hl7_pgsql_wal_path }} folder (HL7).
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ hl7_pgsql_wal_path }}"
+        - "chmod -R 750 {{ hl7_pgsql_wal_path }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ hl7_pgsql_wal_path }}"
+      when:
+       - not pgsql_log.stat.exists
+  when: 
+    - server == "hl7"
+    - cluster == 'jhs' or cluster == 'ktph'
+
+- name: For HL7 DB (NUH / TTSH)
+  block:
+    - name: Check {{ postgresql_log }}/pg_log is exists (HL7)(NUH / TTSH).  
+      stat:
+        path: "{{ postgresql_log }}/pg_log"
+      register: pg_log
+
+    - name: Create {{ postgresql_log }}/pg_log folder (HL7)(NUH / TTSH).
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir -p {{ postgresql_log }}/pg_log"
+        - "chmod -R 750 {{ postgresql_log }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ postgresql_log }}/pg_log"
+      when:
+        - not pg_log.stat.exists
+
+    - name: Check {{ postgresql_log }}/pg_wal if exsists (HL7)(NUH / TTSH).
+      stat:
+        path: "{{ postgresql_log }}/pg_wal"
+      register: pg_wal
+
+    - name: Create {{ postgresql_log }}/pg_wal folder (HL7)(NUH / TTSH).
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ postgresql_log }}/pg_wal"
+        - "chmod -R 750 {{ postgresql_log }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ postgresql_log }}/pg_wal"
+      when:
+       - not pg_wal.stat.exists
+  when: 
+    - server == "hl7"
+    - cluster == 'nuh' or cluster == 'ttsh'
+
+- name: For HMS DB
+  block:
+    - name: Check {{ postgresql_data }} is exists. (HMS)
+      stat:
+        path: "{{ postgresql_data }}"
+      register: pgsql_data
+
+    - name: Create {{ postgresql_data }} folder. (HMS)
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ postgresql_data }}"
+        - "chmod -R 750 {{ postgresql_data }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ postgresql_data }}"
+      when:
+        - not pgsql_data.stat.exists
+
+    - name: Check {{ postgresql_log }} is exists. (HMS)
+      stat:
+        path: "{{ postgresql_log }}"
+      register: pgsql_log
+
+    - name: Create {{ postgresql_log }} folder. (HMS)
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ postgresql_log }}"
+        - "chmod -R 750 {{ postgresql_log }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ postgresql_log }}"
+      when:
+        - not pgsql_log.stat.exists
+
+    - name: Check {{ pgsql_log_path }} is exists. (HMS)
+      stat:
+        path: "{{ pgsql_log_path }}"
+      register: pg_log
+
+    - name: Create {{ pgsql_log_path }} folder. (HMS)
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ pgsql_log_path }}"
+        - "chmod -R 750 {{ pgsql_log_path }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ pgsql_log_path }}"
+      when:
+        - not pgsql_log.stat.exists
+
+    - name: Check {{ pgsql_wal_path }} if exsists. (HMS)
+      stat:
+        path: "{{ pgsql_wal_path }}"
+      register: pg_wal
+
+    - name: Create {{ pgsql_wal_path }} folder. (HMS)
+      shell: sh -c "{{ item }}"
+      with_items:
+        - "mkdir {{ pgsql_wal_path }}"
+        - "chmod -R 750 {{ pgsql_wal_path }}"
+        - "chown -R {{ postgresql_user }}:{{ code_user }} {{ pgsql_wal_path }}"
+      when:
+       - not pgsql_log.stat.exists
+  when: server == "db"
+
+
+- name: Check if PostgreSQL database is initialized.
+  stat:
+    path: "{{ postgresql_data }}/PG_VERSION"
+  register: pgdata_dir_version
+
+- name: Ensure {{ postgresql_user }} have access to {{ data_partition }}
+  shell: sh -c "{{ item }}"
+  with_items: 
+    - "chown -R {{ postgresql_user }}:{{ code_user }} {{ data_partition }}"
+  when:
+    - not pgdata_dir_version.stat.exists
+
+- name: Check limits.conf for soft stack value.
+  register: pgsql_limits_soft
+  shell: sh -c 'cat /etc/security/limits.conf | grep -oE "\*\s+soft\s+stack.*512"'
+  failed_when: false
+
+- name: Check if '8192' value of soft stack is existing on limits.conf.
+  register: pgsql_limits_soft_value
+  shell: sh -c 'cat /etc/security/limits.conf | grep -oE "\*\s+soft\s+stack.*8192"'
+  failed_when: false
+
+- name: Change soft stack value to run DB initialization.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo vi /etc/security/limits.conf -c ':%s/512/8192/g' -c ':wq'"
+  when:
+    - pgsql_limits_soft.rc == 0
+
+- name: Add soft stack value to run DB initialization.
+  shell: sudo sh -c 'echo -e "{{ item }}" >> /etc/security/limits.conf'
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  with_items:
+    - "* \t\tsoft \tstack \t8192"
+  when:
+    - pgsql_limits_soft.rc == 1 and pgsql_limits_soft_value.rc == 1
+
+- name: Check limits.conf for hard stack value.
+  register: pgsql_limits_hard
+  shell: sh -c 'cat /etc/security/limits.conf | grep -oE "\*\s+hard\s+stack.*1024"'
+  failed_when: false
+
+- name: Check if '8192' value of hard stack is existing on limits.conf.
+  register: pgsql_limits_hard_value
+  shell: sh -c 'cat /etc/security/limits.conf | grep -oE "\*\s+hard\s+stack.*8192"'
+  failed_when: false
+
+- name: Change hard stack value to run DB initialization.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo vi /etc/security/limits.conf -c ':%s/1024/8192/g' -c ':wq'"
+  when:
+    - pgsql_limits_hard.rc == 0
+
+- name: Add hard stack value to run DB initialization.
+  shell: sudo sh -c 'echo -e "{{ item }}" >> /etc/security/limits.conf'
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+  with_items:
+    - "* \t\thard \tstack \t8192"
+  when:
+    - pgsql_limits_hard.rc == 1 and pgsql_limits_hard_value.rc == 1
+
+- name: For HL7 DB (JHS/KTPH)
+  block:
+    - name: Ensure PostgreSQL database is initialized. (HL7)
+      shell: "{{ item }}"
+      with_items:
+        - "{{ pgsql_bin_path }}/initdb -g -X {{ hl7_postgresql_log }}/pg_wal -D {{ postgresql_data }}"
+      when:
+        - not pgdata_dir_version.stat.exists
+  when:
+    - server == "hl7"
+    - cluster == 'jhs' or cluster == 'ktph'
+
+- name: For HL7 DB (NUH / TTSH)
+  block:
+    - name: Ensure PostgreSQL database is initialized. (HL7)(NUH / TTSH)
+      shell: "{{ item }}"
+      with_items:
+        - "{{ pgsql_bin_path }}/initdb -g -X {{ postgresql_log }}/pg_wal -D {{ postgresql_data }}"
+      when:
+        - not pgdata_dir_version.stat.exists
+  when:
+    - server == "hl7"
+    - cluster == 'nuh' or cluster == 'ttsh'
+
+- name: For HMS DB
+  block:
+    - name: Ensure PostgreSQL database is initialized. (HMS)
+      shell: "{{ item }}"
+      with_items:
+        - "{{ pgsql_bin_path }}/initdb -g -X {{ postgresql_log }}/pg_wal -D {{ postgresql_data }}"
+      when:
+        - not pgdata_dir_version.stat.exists
+  when: server == "db"
+
+- name: Ensure default config files under {{ postgresql_data }} is absent
+  shell: "rm -f {{ postgresql_data }}/{{ item }}"
+  with_items:
+    - postgresql.conf
+    - pg_hba.conf
+    - pg_ident.conf
+  changed_when:
+    - pgdata_dir_version.stat.exists

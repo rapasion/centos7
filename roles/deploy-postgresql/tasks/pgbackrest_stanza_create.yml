@@ -1,0 +1,12 @@
+---
+
+- name: Check if stanza has been created
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'export PGBACKREST_LOG_LEVEL_CONSOLE=info; export PGBACKREST_STANZA=hms_{{ hospital }}; export PGBACKREST_LOG_PATH={{ pgbackrest_log }}; export PGBACKREST_CONFIG={{ pgsql_config_path }}/pgbackrest.conf; {{ gml_source_path }}/bin/pgbackrest --stanza=hms_{{ hospital }} check'"
+  register: register_pgbackrest_created
+  ignore_errors: true
+
+- debug: var=register_pgbackrest_created
+
+- name: Create Stanza
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'export PGBACKREST_LOG_LEVEL_CONSOLE=info; export PGBACKREST_STANZA=hms_{{ hospital }}; export PGBACKREST_LOG_PATH={{ pgbackrest_log }}; export PGBACKREST_CONFIG={{ pgsql_config_path }}/pgbackrest.conf; {{ gml_source_path }}/bin/pgbackrest stanza-create --stanza=hms_{{ hospital }}'"
+  when: register_pgbackrest_created.rc == '0'

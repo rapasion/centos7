@@ -1,0 +1,44 @@
+- name: Check Current Postgresql Version
+  shell: "{{ gml_source_path }}/bin/psql -V | awk '{print $3}'"
+  register: current_pgsql_version
+
+- name: Stop Postgresql services
+  shell: sh -c "{{ sh_pgsql_stop }}"
+
+- name: Rename Current Postgresql Directory
+  shell: sh -c "mv {{ gml_source_path }}/postgres {{ gml_source_path }}/postgres-{{current_pgsql_version.stdout}}"
+
+- name: Compress Current Postgresql Version
+  become: yes
+  become_user: root
+  become_method: sudo
+  archive:
+    path: "{{ gml_source_path }}/postgres-{{current_pgsql_version.stdout}}"
+    dest: "{{ gml_source_path }}/postgres-{{current_pgsql_version.stdout}}.tar.gz"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: Uncompress Current Postgresql Version
+  become: yes
+  become_user: root
+  become_method: sudo
+  unarchive:
+    src: "{{ gml_source_path }}/postgres-{{current_pgsql_version.stdout}}.tar.gz"
+    dest: "{{ gml_source_path }}"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    remote_src: yes
+
+- name: Ensure Postgresql executable is symlinked into a standard path.
+  file:
+    src: "{{ item }}"
+    dest: "{{ gml_source_path }}/bin/{{ item | basename }}"
+    state: link
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    force: yes
+  with_fileglob:
+    - "{{ gml_source_path }}/postgres-{{current_pgsql_version.stdout}}/12-gml/bin/*"
+
+- name: Start Postgresql services
+  shell: sh -c "{{ sh_pgsql_start }}"

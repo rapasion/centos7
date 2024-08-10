@@ -1,0 +1,376 @@
+---
+
+- name: Create {{ pgsql_dba_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_dba_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_dba_usr }}';
+
+- name: Create {{ pgsql_app_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_app_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_app_usr }}';
+
+- name: Create {{ pgsql_rep_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_rep_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_rep_usr }}';
+
+- name: Create {{ pgsql_read_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_read_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_read_usr }}';
+
+- name: Create {{ pgsql_recon_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_recon_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_recon_usr }}';
+
+- name: Create {{ pgsql_adm1_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_adm1_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_adm1_usr }}';
+  when:
+    - pgsql_adm1_usr is defined
+
+- name: Create {{ pgsql_adm2_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_adm2_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_adm2_usr }}';
+  when:
+    - pgsql_adm2_usr is defined
+
+- name: Create {{ pgsql_read1_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_read1_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_read1_usr }}';
+  when:
+    - pgsql_read1_usr is defined
+
+- name: Create {{ pgsql_read2_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_read2_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_read2_usr }}';
+  when:
+    - pgsql_read2_usr is defined
+
+- name: Create {{ pgsql_read3_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_read3_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_read3_usr }}';
+  when:
+    - pgsql_read3_usr is defined
+
+- name: Create {{ pgsql_read4_usr }} check SQL script.
+  copy:
+    dest: "/tmp/check_{{ pgsql_read4_usr }}.sql"
+    content: |
+      SELECT rolname FROM pg_roles WHERE rolname='{{ pgsql_read4_usr }}';
+  when:
+    - pgsql_read4_usr is defined
+
+- name: Create {{ pgsql_dba_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_dba_usr }}.sql"
+    content: |
+      CREATE ROLE {{ pgsql_dba_usr }} WITH LOGIN PASSWORD '{{ pgsql_dba_pwd }}';
+      GRANT {{ postgresql_user }} TO {{ pgsql_dba_usr }};
+      ALTER ROLE {{ pgsql_dba_usr }} INHERIT;
+
+- name: Create {{ pgsql_app_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_app_usr }}.sql"
+    content: |
+      CREATE ROLE {{ pgsql_app_usr }} WITH LOGIN PASSWORD '{{ pgsql_app_pwd }}';
+      GRANT USAGE ON SCHEMA public TO {{ pgsql_app_usr }};
+      GRANT SELECT, INSERT, UPDATE, DELETE, TRIGGER ON ALL TABLES IN SCHEMA public TO {{ pgsql_app_usr }};
+      GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO {{ pgsql_app_usr }};
+      GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO {{ pgsql_app_usr }};
+
+- name: Create {{ pgsql_rep_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_rep_usr }}.sql"
+    content: |
+      CREATE ROLE {{ pgsql_rep_usr }} WITH LOGIN REPLICATION PASSWORD '{{ pgsql_rep_pwd }}';
+
+- name: Create {{ pgsql_read_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_read_usr }}.sql"
+    content: |
+      CREATE ROLE {{ pgsql_read_usr }} WITH LOGIN PASSWORD '{{ pgsql_read_pwd }}';
+      GRANT USAGE ON SCHEMA public TO {{ pgsql_read_usr }};
+      GRANT SELECT ON ALL TABLES IN SCHEMA public TO {{ pgsql_read_usr }};
+      GRANT REFERENCES ON ALL TABLES IN SCHEMA public TO {{ pgsql_read_usr }};
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO {{ pgsql_read_usr }};
+
+- name: Create {{ pgsql_recon_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_recon_usr }}.sql"
+    content: |
+      CREATE ROLE {{ pgsql_recon_usr }} WITH LOGIN SUPERUSER PASSWORD '{{ pgsql_recon_pwd }}';
+      GRANT {{ pgsql_dba_usr }} TO {{ pgsql_recon_usr }};
+      ALTER ROLE {{ pgsql_recon_usr }} INHERIT;
+
+- name: Create {{ pgsql_adm1_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_adm1_usr }}.sql"
+    content: |
+      CREATE USER {{ pgsql_adm1_usr }} WITH LOGIN PASSWORD '{{ pgsql_adm1_pwd }}';
+      GRANT {{ pgsql_dba_usr }} TO {{ pgsql_adm1_usr }};
+      ALTER ROLE {{ pgsql_adm1_usr }} INHERIT;
+  when:
+    - pgsql_adm1_usr is defined
+
+- name: Create {{ pgsql_adm2_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_adm2_usr }}.sql"
+    content: |
+      CREATE USER {{ pgsql_adm1_usr }} WITH LOGIN PASSWORD '{{ pgsql_adm2_pwd }}';
+      GRANT {{ pgsql_dba_usr }} TO {{ pgsql_adm2_usr }};
+      ALTER ROLE {{ pgsql_adm2_usr }} INHERIT;
+  when:
+    - pgsql_adm2_usr is defined
+
+- name: Create {{ pgsql_read1_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_read1_usr }}.sql"
+    content: |
+      CREATE USER {{ pgsql_read1_usr }} WITH LOGIN PASSWORD '{{ pgsql_read1_pwd }}';
+      GRANT {{ pgsql_read_usr }} TO {{ pgsql_read1_usr }};
+      ALTER ROLE {{ pgsql_read1_usr }} INHERIT;
+  when:
+    - pgsql_read1_usr is defined
+
+- name: Create {{ pgsql_read2_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_read2_usr }}.sql"
+    content: |
+      CREATE USER {{ pgsql_read2_usr }} WITH LOGIN PASSWORD '{{ pgsql_read2_pwd }}';
+      GRANT {{ pgsql_read_usr }} TO {{ pgsql_read2_usr }};
+      ALTER ROLE {{ pgsql_read2_usr }} INHERIT;
+  when:
+    - pgsql_read2_usr is defined
+
+- name: Create {{ pgsql_read3_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_read3_usr }}.sql"
+    content: |
+      CREATE USER {{ pgsql_read3_usr }} WITH LOGIN PASSWORD '{{ pgsql_read3_pwd }}';
+      GRANT {{ pgsql_read_usr }} TO {{ pgsql_read3_usr }};
+      ALTER ROLE {{ pgsql_read3_usr }} INHERIT;
+  when:
+    - pgsql_read3_usr is defined
+
+- name: Create {{ pgsql_read4_usr }} create and grant SQL script.
+  copy:
+    dest: "/tmp/create_{{ pgsql_read4_usr }}.sql"
+    content: |
+      CREATE USER {{ pgsql_read4_usr }} WITH LOGIN PASSWORD '{{ pgsql_read4_pwd }}';
+      GRANT {{ pgsql_read_usr }} TO {{ pgsql_read4_usr }};
+      ALTER ROLE {{ pgsql_read4_usr }} INHERIT;
+  when:
+    - pgsql_read4_usr is defined
+
+- name: Check pgcrypto extension if installed
+  register: pgsql_pgcrypto_extension
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -c "SELECT * FROM pg_extension;"'
+
+- name: Create PgCrypto Extension.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -c "{{ item }};"'
+  with_items:
+    - "CREATE EXTENSION IF NOT EXISTS pgcrypto"
+  when:
+    - "'pgcrypto' not in pgsql_pgcrypto_extension.stdout"
+
+- name: Check set_user extension if installed
+  register: pgsql_setuser_extension
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -c "SELECT * FROM pg_extension;"'
+
+- name: Create set_user Extension.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -c "{{ item }};"'
+  with_items:
+    - "CREATE EXTENSION IF NOT EXISTS set_user"
+  when:
+    - "'set_user' not in pgsql_setuser_extension.stdout"
+
+- name: Check pg_permissions extension if installed
+  register: pgsql_pgpermissions_extension
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -c "SELECT * FROM pg_extension;"'
+
+- name: Create pg_permission Extension.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -c "{{ item }};"'
+  with_items:
+    - "CREATE EXTENSION IF NOT EXISTS pg_permissions"
+  when:
+    - "'pg_permissions' not in pgsql_pgpermissions_extension.stdout"
+
+- name: Check {{ pgsql_dba_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_dba_usr }}.sql'
+  register: pgsql_role_dba
+
+- name: Create {{ pgsql_dba_usr }} Role and Grant {{ postgresql_user }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_dba_usr }}.sql'
+  when:
+    - "'{{ pgsql_dba_usr }}' not in pgsql_role_dba.stdout"
+
+- name: Check {{ pgsql_app_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_app_usr }}.sql'
+  register: pgsql_role_app
+
+- name: Create {{ pgsql_app_usr }} Role and Grant Seleted Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_app_usr }}.sql'
+  when:
+    - "'{{ pgsql_app_usr }}' not in pgsql_role_app.stdout"
+
+- name: Check {{ pgsql_read_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_read_usr }}.sql'
+  register: pgsql_role_read
+
+- name: Create {{ pgsql_read_usr }} Role and Grant Read-only Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_read_usr }}.sql'
+  when:
+    - "'{{ pgsql_read_usr }}' not in pgsql_role_app.stdout"
+
+- name: Check {{ pgsql_rep_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_rep_usr }}.sql'
+  register: pgsql_role_rep
+
+- name: Create {{ pgsql_rep_usr }} Role and Grant Replication Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_rep_usr }}.sql'
+  when:
+    - "'{{ pgsql_rep_usr }}' not in pgsql_role_rep.stdout"
+
+- name: Check {{ pgsql_recon_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_recon_usr }}.sql'
+  register: pgsql_role_recon
+
+- name: Create {{ pgsql_recon_usr }} Role and Grant {{ pgsql_dba_usr }} Privilleges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_recon_usr }}.sql'
+  when:
+    - "'{{ pgsql_recon_usr }}' not in pgsql_role_recon.stdout"
+
+- name: Check {{ pgsql_adm1_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_adm1_usr }}.sql'
+  register: pgsql_role_adm1
+  when:
+    - pgsql_adm1_usr is defined
+
+- name: Create {{ pgsql_adm1_usr }} User and Grant {{ pgsql_dba_usr }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_adm1_usr }}.sql'
+  when:
+    - pgsql_adm1_usr is defined
+    - "'{{ pgsql_adm1_usr }}' not in pgsql_role_adm1.stdout"
+
+- name: Check {{ pgsql_adm2_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_adm2_usr }}.sql'
+  register: pgsql_role_adm1
+  when:
+    - pgsql_adm2_usr is defined
+
+- name: Create {{ pgsql_adm2_usr }} User and Grant {{ pgsql_dba_usr }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_adm2_usr }}.sql'
+  when:
+    - pgsql_adm2_usr is defined
+    - "'{{ pgsql_adm2_usr }}' not in pgsql_role_adm2.stdout"
+
+- name: Check {{ pgsql_read1_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_read1_usr }}.sql'
+  register: pgsql_role_read1
+  when:
+    - pgsql_read1_usr is defined
+
+- name: Create {{ pgsql_read1_usr }} User and Grant {{ pgsql_read_usr }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_read1_usr }}.sql'
+  when:
+    - pgsql_read1_usr is defined
+    - "'{{ pgsql_read1_usr }}' not in pgsql_role_read1.stdout"
+
+- name: Check {{ pgsql_read2_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_read2_usr }}.sql'
+  register: pgsql_role_read2
+  when:
+    - pgsql_read2_usr is defined
+
+- name: Create {{ pgsql_read2_usr }} User and Grant {{ pgsql_read_usr }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_read2_usr }}.sql'
+  when:
+    - pgsql_read2_usr is defined
+    - "'{{ pgsql_read2_usr }}' not in pgsql_role_read2.stdout"
+
+- name: Check {{ pgsql_read3_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_read3_usr }}.sql'
+  register: pgsql_role_read3
+  when:
+    - pgsql_read3_usr is defined
+
+- name: Create {{ pgsql_read3_usr }} User and Grant {{ pgsql_read_usr }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_read3_usr }}.sql'
+  when:
+    - pgsql_read3_usr is defined
+    - "'{{ pgsql_read3_usr }}' not in pgsql_role_read3.stdout"
+
+- name: Check {{ pgsql_read4_usr }} role if exists.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/check_{{ pgsql_read4_usr }}.sql'
+  register: pgsql_role_read4
+  when:
+    - pgsql_read4_usr is defined
+
+- name: Create {{ pgsql_read4_usr }} User and Grant {{ pgsql_read_usr }} Privileges.
+  shell: sh -c '{{ gml_source_path }}/bin/psql -U {{ postgresql_user }} -d postgres -p {{ hl7_pgsql_port }} -f /tmp/create_{{ pgsql_read4_usr }}.sql'
+  when:
+    - pgsql_read4_usr is defined
+    - "'{{ pgsql_read4_usr }}' not in pgsql_role_read4.stdout"
+
+- name: Remove created SQL script files.
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:
+    - check_{{ pgsql_dba_usr }}.sql
+    - check_{{ pgsql_app_usr }}.sql
+    - check_{{ pgsql_rep_usr }}.sql
+    - check_{{ pgsql_read_usr }}.sql
+    - check_{{ pgsql_recon_usr }}.sql
+    - create_{{ pgsql_dba_usr }}.sql
+    - create_{{ pgsql_app_usr }}.sql
+    - create_{{ pgsql_rep_usr }}.sql
+    - create_{{ pgsql_rep_usr }}.sql
+    - create_{{ pgsql_recon_usr }}.sql
+
+- name: Remove created SQL scripts files.
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:
+    - check_{{ pgsql_adm1_usr }}.sql
+    - check_{{ pgsql_adm2_usr }}.sql
+    - check_{{ pgsql_read1_usr }}.sql
+    - check_{{ pgsql_read2_usr }}.sql
+    - create_{{ pgsql_adm1_usr }}.sql
+    - create_{{ pgsql_adm2_usr }}.sql
+    - create_{{ pgsql_read1_usr }}.sql
+    - create_{{ pgsql_read2_usr }}.sql
+  when:
+    - pgsql_adm1_usr is defined or pgsql_adm2_usr is defined
+    - pgsql_read1_usr is defined or pgsql_read2_usr is defined
+  
+- name: Remove created SQL scripts files.
+  file:
+    path: "/tmp/{{ item }}"
+    state: absent
+  with_items:
+    - check_{{ pgsql_read3_usr }}.sql
+    - check_{{ pgsql_read4_usr }}.sql
+    - create_{{ pgsql_read3_usr }}.sql
+    - create_{{ pgsql_read4_usr }}.sql
+  when:
+    - pgsql_read3_usr is defined or pgsql_read4_usr is defined

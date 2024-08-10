@@ -1,0 +1,8 @@
+---
+- name: Compress PostgreSQL Installation Directory
+  archive:
+    path: "{{ postgres_install_path }}"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ gml_source_psql_file }}"
+  tags:
+    - pgsql_compress
+    - pgsql_install

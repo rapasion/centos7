@@ -1,0 +1,215 @@
+---
+
+- name: Ensure PostgreSQL config folder exist.
+  stat:
+    path: "{{ pgsql_config_path }}"
+  register: register_pgpsql_config
+
+- name: Ensure SSL folder exist.
+  stat:
+    path: "{{ conf_ssl_directory }}"
+  register: register_ssl_folder
+
+- name: Ensure PGSQL folder exist under {{ conf_ssl_directory }}.
+  stat:
+    path: "{{ conf_ssl_directory }}/pgsql"
+  register: register_pgsql_ssl_folder
+  
+- name: Check dhparam.pem exist.
+  stat:
+    path: "{{ conf_ssl_directory }}/dhparam.pem"
+  register: register_dhparam
+
+- name: Check libLLVM-5.0.so if exists.
+  shell: sh -c "ldconfig -p | grep libLLVM"
+  register: register_libLLVM
+  failed_when: false
+
+- name: Check gml_source file under ld.so.conf.d folder
+  stat:
+    path: "/etc/ld.so.conf.d/gml_source.conf"
+  register: gml_source_ld
+
+- name: Check if libicu is installed
+  shell: sh -c "rpm -qa | grep libicu"
+  register: libicu_check
+  failed_when: false
+
+- name: Install libicu RPM dependencies
+  shell: sh -c "sudo rpm -ivh {{ item }}"
+  with_items:
+    - "{{ playbook_dir }}/downloads/libicu-50.2-4.el7_7.x86_64.rpm"
+  when: 
+    - libicu_check.rc == 1
+
+- name: Extract libLLVM-5.0.so
+  unarchive:
+    src: "{{ playbook_dir }}/{{ compressed_dir }}/libLLVM-5.0.so.tar.gz"
+    dest: "{{ gml_source_path }}/lib"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+    remote_src: yes
+  when:
+    - register_libLLVM.rc != 0
+
+- name: Create gml_source.conf file.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "echo '{{ gml_source_path }}/lib' > gml_source.conf"
+    - "sudo vi gml_source.conf -c ':w /etc/ld.so.conf.d/gml_source.conf' -c ':q!'"
+    - "rm -f gml_source.conf"
+  when:
+    - not gml_source_ld.stat.exists
+
+- name: Create SSL folder if not exists.
+  file:
+    path: "{{ conf_ssl_directory }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_ssl_folder.stat.exists   
+
+- name: Create PostgreSQL config folder.
+  file:
+    path: "{{ pgsql_config_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_pgpsql_config.stat.exists
+
+- name: Copy dhparam.pem in Apache SSL folder
+  template:
+    src: "{{ playbook_dir }}/ssl/dhparam.pem"
+    dest: "{{ gml_source_path }}/ssl/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0644'
+  when:
+    - not register_dhparam.stat.exists
+
+- name: Ensure PostgreSQL folder for ssl exist
+  file:
+    path: "{{ conf_ssl_directory }}/pgsql"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+    recurse: yes
+  when: not register_pgsql_ssl_folder.stat.exists
+  
+- name: Deploy certificate file for UAT/PRD DB or HL7
+  copy:
+    src: "{{ playbook_dir }}/ssl/PROD/{{ item }}"
+    dest: "{{ conf_ssl_directory }}/pgsql/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0600'
+  with_items:
+    ['hmsgeneric.nhg.local.cer','hmsgeneric.nhg.local.key']
+
+- name: Ensure correct permission of certificate.
+  shell: sh -c "sudo chown {{ postgresql_user }}:{{ code_user }} {{ conf_ssl_directory }}/pgsql/{{ item }}"
+  with_items: 
+    ['hmsgeneric.nhg.local.cer','hmsgeneric.nhg.local.key']
+
+- name: Ensure correct permission of config path
+  shell: sh -c "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ pgsql_config_path }}"
+  tags:
+    - pgsql-custom-config
+    - pgsql-postgresql-conf
+    - pgsql-hba-config
+    - pgsql-ident-conf
+
+- name: Deploy custom_config.conf
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  template:
+    dest: "{{ pgsql_config_path }}/"
+    src: custom_config.conf
+    mode: '0640'
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+  tags:
+    - pgsql-custom-config
+  notify: reload postgresql
+
+- name: Deploy postgresql.conf
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  template:
+    dest: "{{ pgsql_config_path }}/"
+    src: postgresql.conf
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+    mode: '0640'
+  tags:
+    - pgsql-postgresql-conf
+  notify: reload postgresql
+
+- name: Deploy pg_hba.conf
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  template:
+    dest: "{{ pgsql_config_path }}/pg_hba.conf"
+    src: pg_hba.conf.j2
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+    mode: '0640'
+  tags:
+    - pgsql-hba-config
+  notify: reload postgresql
+
+- name: Deploy pg_ident.conf
+  become: yes
+  become_user: "{{ postgresql_user }}"
+  become_method: sudo
+  template:
+    dest: "{{ pgsql_config_path }}/pg_ident.conf"
+    src: pg_ident.conf
+    mode: '0640'
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+  tags:
+    - pgsql-ident-conf
+  notify: reload postgresql
+
+- name: Ensure {{ pgsql_bin_path }} folder have right permission.
+  file:
+    path: "{{ pgsql_bin_path }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: "0750"
+
+- name: Reload environment.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo vi /etc/ld.so.conf.d/gml_source.conf -c ':r!ldconfig' -c ':q!'"
+  when:
+    - register_libLLVM.rc != 0
+
+- block:
+  - name: Ensure PostgreSQL socket folder exist.
+    stat:
+      path: "{{ pgsql_socket_path }}"
+    register: register_pgsql_socket
+  - name: Create PostgreSQL socker folder.
+    file:
+      path: "{{ pgsql_socket_path }}"
+      state: directory
+      owner: "{{ code_user }}"
+      group: "{{ code_user }}"
+      mode: '0750'
+    when: not register_pgsql_socket.stat.exists
+
+  - name: Ensure correct permission of socket foler.
+    shell: sh -c "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ pgsql_socket_path }}"
+
+  tags:
+    - pgsql-socket-path

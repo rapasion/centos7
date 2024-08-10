@@ -1,0 +1,73 @@
+---
+
+- name: Check .pgpass if exists
+  stat:
+    path: "{{ code_user_dir }}/.pgpass"
+  register: register_pgpass
+  when:
+    - server is defined
+    - server == 'db' or server == 'hl7'
+
+- name: Storing PGPASS info (file not existed)
+  block:
+  - name: Ensure .pgpass file exist in {{ code_user_dir}}
+    shell: sh -c "touch {{ code_user_dir }}/.pgpass"
+
+  - name: Store connection information to {{ postgresql_user }} .pgpass file 
+    lineinfile:
+      path: "{{ code_user_dir }}/.pgpass"
+      state: present
+      line: "{{ item }}"
+    with_items:
+      - "{{ db_set_a }}:{{ pgsql_port }}:{{ pgsql_dba_usr }}:Ant1c0@gul@t10n"
+      - "{{ db_set_b }}:{{ pgsql_port }}:{{ pgsql_dba_usr }}:Ant1c0@gul@t10n"
+    when: 
+      - code_environment == 'prod' || code_environment == 'dr'
+
+  - name: Store connection information to {{ postgresql_user }} .pgpass file 
+    lineinfile:
+      path: "{{ code_user_dir }}/.pgpass"
+      state: present
+      line: "{{ item }}"
+    with_items:
+      - "{{ db_set_a }}:{{ pgsql_port }}:{{ pgsql_dba_usr }}:Chr0n0l0g1c@lly"
+    when: 
+      - code_environment == 'uat' 
+
+  - name: Change ownership of {{ code_user_dir }}/.pgpass file
+    shell: sh -c "{{ item }}"
+    with_items:
+      - "sudo chown {{ code_user }}:{{ code_user }} {{ code_user_dir }}/.pgpass"
+      - "sudo chmod 600 {{ code_user_dir }}/.pgpass"
+  when:
+    - server == 'db'
+    - server is defined
+    - not register_pgpass.stat.exists
+
+- name: Storing PGPASS info (file existed)
+  block:
+  - name: Store connection information to {{ postgresql_user }} .pgpass file 
+    lineinfile:
+      path: "{{ code_user_dir }}/.pgpass"
+      state: present
+      line: "{{ item }}"
+    with_items:
+      - "{{ db_set_a }}:{{ pgsql_port }}:{{ pgsql_dba_usr }}:Ant1c0@gul@t10n"
+      - "{{ db_set_b }}:{{ pgsql_port }}:{{ pgsql_dba_usr }}:Ant1c0@gul@t10n"
+    when: 
+      - code_environment == 'prod' || code_environment == 'dr'
+
+  - name: Store connection information to {{ postgresql_user }} .pgpass file 
+    lineinfile:
+      path: "{{ code_user_dir }}/.pgpass"
+      state: present
+      line: "{{ item }}"
+    with_items:
+      - "{{ db_set_a }}:{{ pgsql_port }}:{{ pgsql_dba_usr }}:Chr0n0l0g1c@lly"
+    when: 
+      - code_environment == 'uat' 
+
+  when:
+    - server == 'db'
+    - server is defined
+    - register_pgpass.stat.exists

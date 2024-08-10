@@ -1,0 +1,289 @@
+---
+
+- name: Check pgBackRest conf.d folder if exist
+  stat:
+    path: "{{ pgbackrest_conf_d }}"
+  register: register_pgbackrest_conf_d
+
+- name: Ensure pgBackRest conf.d folder exist
+  file:
+    path: "{{ pgbackrest_conf_d }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_pgbackrest_conf_d.stat.exists
+
+- name: Check pgBackRest log folder if exists
+  stat:
+    path: "{{ pgbackrest_log }}"
+  register: register_pgbackrest_log
+
+- name: Ensure pgBackRest log folder exist
+  file:
+    path: "{{ pgbackrest_log }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_pgbackrest_log.stat.exists
+  
+- name: Ensure permission of pgBackRest Log Dir is correct
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chmod 750 {{ pgbackrest_log }}"
+    - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ pgbackrest_log }}"
+
+- name: Check {{ pgsql_logrotate_log }} folder if exists
+  stat:
+    path: "{{ pgsql_logrotate_log }}"
+  register: register_pgsql_logrotate_log
+
+- name: Ensure {{ pgsql_logrotate_log }} folder exist
+  file:
+    path: "{{ pgsql_logrotate_log }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_pgsql_logrotate_log.stat.exists
+
+- name: Check {{ shared_drive_postgresql_db_backup_dir }} folder if exists (HMS)
+  stat:
+    path: "{{ shared_drive }}/postgresql_db_backup/{{ hospital }}"
+  register: register_shared_drive_postgresql_db_backup_dir
+
+- name: Ensure {{ shared_drive_postgresql_db_backup_dir }} folder exist (HMS)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  loop:
+     - '{{ shared_drive_postgresql_db_backup_dir }}1'
+     - '{{ shared_drive_postgresql_db_backup_dir }}2'
+  when: 
+    - server is defined and server == 'db'
+    - not register_shared_drive_postgresql_db_backup_dir.stat.exists
+
+- name: Ensure {{ shared_drive_postgresql_db_backup_dir }} folder has correct permissions (HMS)
+  shell: sh -c "{{ item }}"
+  with_items:
+    - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive_postgresql_db_backup_dir }}1'
+    - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive_postgresql_db_backup_dir }}2'
+    - 'sudo chmod 750 {{ shared_drive_postgresql_db_backup_dir }}1'
+    - 'sudo chmod 750 {{ shared_drive_postgresql_db_backup_dir }}2'
+  when:
+    - server is defined and server == 'db'
+    - not register_shared_drive_postgresql_db_backup_dir.stat.exists
+
+- name: Check {{ shared_drive_postgresql_hl7_db_backup_dir }} folder if exists (HL7)
+  stat:
+    path: "{{ shared_drive }}/postgresql_hl7_db_backup/{{ hospital }}"
+  register: register_shared_drive_postgresql_hl7_db_backup_dir
+
+- name: Ensure {{ shared_drive_postgresql_hl7_db_backup_dir }} folder exist (HL7)
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  loop:
+     - '{{ shared_drive_postgresql_hl7_db_backup_dir }}1'
+     - '{{ shared_drive_postgresql_hl7_db_backup_dir }}2'
+  when: 
+    - server is defined and server == 'hl7'
+    - not register_shared_drive_postgresql_hl7_db_backup_dir.stat.exists
+
+- name: Check symlink for /xpool (HL7)
+  stat:
+    path: "/xpool"
+  register: register_xpool_folder
+
+- name: Create link /xpool in (HL7)
+  command: "{{ item }}"
+  with_items:
+    - 'sudo ln -s /ypool/xpool /xpool'
+    - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} /xpool'
+    - 'sudo chmod -R 750 /ypool/xpool'
+  when: 
+    - not register_xpool_folder.stat.exists
+    - server is defined and server == 'hl7'
+    - cluser == 'ktph'
+
+- name: Check pgBackRest repository if exists
+  become: yes
+  become_user: root
+  become_method: sudo
+  stat:
+    path: "{{ pgbackrest_repo }}"
+  register: register_pgbackrest_repo
+
+- name: Ensure pgBackRest repository for HMS DB1 exist (HMS)
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'ln -s {{ shared_drive_postgresql_db_backup_dir }}1 {{ pgbackrest_repo }}'"
+  when:
+    - not register_pgbackrest_repo.stat.exists
+    - server is defined and server == 'db'
+    - db_set_a is defined and db_set_a == ansible_default_ipv4.address
+    - not register_shared_drive_postgresql_db_backup_dir.stat.exists
+
+- name: Ensure pgBackRest repository for HMS DB2 exist (HMS)
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'ln -s {{ shared_drive_postgresql_db_backup_dir }}2 {{ pgbackrest_repo }}'"
+  when:
+    - not register_pgbackrest_repo.stat.exists
+    - server is defined and server == 'db'
+    - db_set_b is defined and db_set_b == ansible_default_ipv4.address
+    - not register_shared_drive_postgresql_db_backup_dir.stat.exists
+
+- name: Ensure pgBackRest repository for HL71 DB exist (HL7)
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'ln -s {{ shared_drive_postgresql_hl7_db_backup_dir }}1 {{ pgbackrest_repo }}'"
+  when: 
+    - not register_pgbackrest_repo.stat.exists
+    - server is defined and server == 'hl7'
+    - hl7_db_set_a is defined and hl7_db_set_a == ansible_default_ipv4.address
+    - not register_shared_drive_postgresql_hl7_db_backup_dir.stat.exists
+
+- name: Ensure pgBackRest repository for HL72 DB exist (HL7)
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'ln -s {{ shared_drive_postgresql_hl7_db_backup_dir }}2 {{ pgbackrest_repo }}'"
+  when: 
+    - not register_pgbackrest_repo.stat.exists
+    - server is defined and server == 'hl7'
+    - hl7_db_set_b is defined and hl7_db_set_b == ansible_default_ipv4.address
+    - not register_shared_drive_postgresql_hl7_db_backup_dir.stat.exists
+
+- name: Set pgBackRest repository folder with correct permission.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chmod -R 750 {{ pgbackrest_repo }}"
+    - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ pgbackrest_repo }}"
+
+- name: Ensure pgBackRest backup Dir have correct permission on shared drive (HMS)
+  command: "{{ item }}"
+  with_items:
+    - 'sudo chmod -R 750 {{ shared_drive }}/postgresql_db_backup/'
+    - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_db_backup/'
+  when: 
+    - server is defined and server == 'db'
+
+- name: Ensure pgBackRest backup Dir have correct permission on shared drive (HL7)
+  command: "{{ item }}"
+  with_items:
+    - 'sudo chmod -R 750 {{ shared_drive }}/postgresql_hl7_db_backup/'
+    - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive }}/postgresql_hl7_db_backup/'
+  when: 
+    - server is defined and server == 'hl7'
+
+- name: Ensure log_backup Dir have correct permission on shared drive
+  command: "{{ item }}"
+  with_items:
+    - 'sudo chmod -R 750 {{ shared_drive_log_backup_dir }}'
+    - 'sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ shared_drive_log_backup_dir }}'
+
+- name: Check if {{ postgresql_user }} .bash_profile exists
+  stat:
+    path: /ypool/.bash_profile
+  register: register_postgresql_user_profile
+
+- name: Extract .bash_profile Template to /tmp/
+  template: 
+    src: roles/deploy-setup/templates/bash_profile.j2
+    dest: /tmp/.bash_profile
+  when: not register_postgresql_user_profile.stat.exists
+
+- name: Check if PgBackRest environment Variables define in {{ postgresql_user }} .bash_profile
+  shell: sh -c 'grep -c "PGBACKREST_*" /ypool/.bash_profile || true'
+  register: register_pgbackrest_postgresql_user_envi
+
+- name: Insert PgBackRest environment Variables into {{ postgresql_user }} .bash_profile
+  lineinfile:
+    path: "/tmp/.bash_profile"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertafter: '# PgBackRest...'
+  with_items:
+    - { regexp: 'PGBACKREST_LOG_LEVEL_CONSOLE', line: 'export PGBACKREST_LOG_LEVEL_CONSOLE=info'}
+    - { regexp: 'PGBACKREST_STANZA', line: 'export PGBACKREST_STANZA=hms_{{ hospital }}'}
+    - { regexp: 'PGBACKREST_LOG_PATH', line: 'export PGBACKREST_LOG_PATH={{ pgbackrest_log }}'}
+    - { regexp: 'PGBACKREST_CONFIG', line: 'export PGBACKREST_CONFIG={{ pgsql_config_path }}/pgbackrest.conf'}
+  when: register_pgbackrest_postgresql_user_envi.stdout == "0"
+
+- name: Copy .bash_profile from /tmp/ to /ypool/ then remove
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo cp -f /tmp/.bash_profile /ypool/"
+    - "rm -f /tmp/.bash_profile"
+  when: register_postgresql_user_profile.stat.exists
+
+- name: Change /ypool/.bash_profile permission to {{ postgresql_user }}
+  shell: sh -c "sudo chown {{ postgresql_user }}:{{ code_user }} /ypool/.bash_profile"
+  when: register_postgresql_user_profile.stat.exists
+
+- name: Check {{ pgbackrest_spool_dir }} Dir if exist
+  become: yes
+  become_user: root
+  become_method: sudo
+  stat:
+    path: "{{ pgbackrest_spool_dir }}"
+  register: 
+    register_pgbackrest_spool_dir
+
+- name: Ensure {{ pgbackrest_spool_dir }} exist
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'mkdir {{ pgbackrest_spool_dir }}'"
+  when:
+    - not register_pgbackrest_spool_dir.stat.exists
+
+- name: Set {{ pgbackrest_spool_dir }} correct permission
+  shell: sh -c "{{ item }}"
+  with_items: 
+    - "sudo chmod 750 {{ pgbackrest_spool_dir }}"
+    - "sudo chown {{ postgresql_user }}:{{ code_user }} {{ pgbackrest_spool_dir }}"
+  when: not register_pgbackrest_spool_dir.stat.exists
+
+- name: Set pgBackRest log folder with correct permission.
+  shell: sh -c "sudo chown {{ postgresql_user }}:{{ code_user }} {{ pgbackrest_log }}"
+  when: not register_pgbackrest_log.stat.exists
+
+- name: Ensure correct permission of config path
+  shell: sh -c "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ pgsql_config_path }}"
+
+- name: Deploy pgBackRest.conf
+  become: yes
+  become_method: sudo
+  become_user: "{{ postgresql_user }}"
+  become_flags: "su -c"
+  template:
+    dest: "{{ pgsql_config_path }}/pgbackrest.conf"
+    src: pgbackrest.conf.j2
+    mode: '0640'
+    owner: "{{ postgresql_user }}"
+    group: "{{ code_user }}"
+
+- name: Ensure correct permission of {{ pgsql_logrotate_log }}.
+  shell: sh -c "sudo chown {{ postgresql_user }}:{{ code_user }} {{ pgsql_logrotate_log }}"
+
+- name: Set PgBackRest environment Variables.
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "export PGBACKREST_LOG_LEVEL_CONSOLE=info"
+    - "export PGBACKREST_STANZA=hms_{{ hospital }}"
+    - "export PGBACKREST_LOG_PATH={{ pgbackrest_log }}"
+    - "export PGBACKREST_CONFIG={{ pgsql_config_path }}/pgbackrest.conf"
+
+- name: Check if PgBackRest environment Variables define in {{ code_user }} .bash_profile
+  shell: sh -c 'grep -c "PGBACKREST_*" /export/home/{{ code_user }}/.bash_profile || true'
+  register: register_pgbackrest_code_user_envi
+
+- name: Insert PgBackRest environment Variables into {{ code_user }} .bash_profile
+  lineinfile:
+    path: "/export/home/{{ code_user }}/.bash_profile"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    insertafter: '# PgBackRest...'
+  with_items:
+    - { regexp: 'PGBACKREST_LOG_LEVEL_CONSOLE', line: 'export PGBACKREST_LOG_LEVEL_CONSOLE=info'}
+    - { regexp: 'PGBACKREST_STANZA', line: 'export PGBACKREST_STANZA=hms_{{ hospital }}'}
+    - { regexp: 'PGBACKREST_LOG_PATH', line: 'export PGBACKREST_LOG_PATH={{ pgbackrest_log }}'}
+    - { regexp: 'PGBACKREST_CONFIG', line: 'export PGBACKREST_CONFIG={{ pgsql_config_path }}/pgbackrest.conf'}
+  when: register_pgbackrest_code_user_envi.stdout == "0"

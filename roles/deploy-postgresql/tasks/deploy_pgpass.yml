@@ -1,0 +1,56 @@
+---
+
+- name: Deploying HMS DB PGPASS (PROD)
+  block:
+  - name: Deploying HMS DB PGPASS (PROD)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ code_user_dir }}/.pgpass"
+    with_items:
+      - ".pgpass_hms-prd"
+  tags:
+    - deploy_pgpass_prod_hms_db
+
+- name: Deploying HL7 DB PGPASS (PROD)
+  block:
+  - name: Deploying HL7 DB PGPASS (PROD)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ code_user_dir }}/.pgpass"
+    with_items:
+      - ".pgpass_hl7-prd"
+  tags:
+    - deploy_pgpass_prod_hl7_db
+
+- name: Deploying HMS DB PGPASS (UAT)
+  block:
+  - name: Deploying HMS DB PGPASS (UAT)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ code_user_dir }}/.pgpass"
+    with_items:
+      - ".pgpass_hms-uat"
+  tags:
+    - deploy_pgpass_uat_hms_db
+
+- name: Deploying HL7 DB PGPASS (UAT)
+  block:
+  - name: Deploying HL7 DB PGPASS (UAT)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ code_user_dir }}/.pgpass"
+    with_items:
+      - ".pgpass_hl7-uat"
+  tags:
+    - deploy_pgpass_uat_hl7_db
+
+- name: Deploying HL7 DB PGPASS (ARCHIVE)
+  block:
+  - name: Deploying HL7 DB PGPASS (ARCHIVE)
+    copy:
+      src: "{{ playbook_dir }}/adhoc_scripts/archive_scripts/{{ hospital }}/{{ item }}"
+      dest: "{{ code_user_dir }}/.pgpass"
+    with_items:
+      - ".pgpass_hms-archive"
+  tags:
+    - deploy_pgpass_archive_hms_db

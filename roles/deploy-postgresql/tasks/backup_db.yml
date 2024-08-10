@@ -1,0 +1,131 @@
+---
+
+- name: Check pgsql folder if exists under gml_source/logs/.
+  stat:
+    path: "{{ pgsql_logrotate_log }}"
+  register: register_pgsql_logrotate_log
+
+- name: Ensure pgsql folder created under gml_source/logs/.
+  file:
+    path: "{{ pgsql_logrotate_log }}"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_pgsql_logrotate_log.stat.exists
+
+- name: Check Backup Dir Exists
+  stat:
+    path: "{{ db_backup_dir }}"
+  register: register_db_backup_dir
+
+- name: Ensure Backup Dir Exists
+  shell: sh -c "sudo su {{ postgresql_user }} -c 'mkdir {{ db_backup_dir }}'"
+  when: not register_db_backup_dir.stat.exists
+
+- name: Change permission of Backup Dir
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo chmod 750 {{ db_backup_dir }}"
+    - "sudo chown -R {{ postgresql_user }}:{{ code_user }} {{ db_backup_dir }}"
+  when: not register_db_backup_dir.stat.exists
+
+- name: Check pgsql log backup dir {{ server }}1 if exist
+  stat:
+    path: "{{ shared_drive_pgsql_log_backup_dir }}1"
+  register: register_shared_drive_pgsql_log_backup_dir_1
+
+- name: Ensure pgsql log backup dir '{{ server }}1' exist
+  file:
+    path: "{{ shared_drive_pgsql_log_backup_dir }}1"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_shared_drive_pgsql_log_backup_dir_1.stat.exists
+
+- name: Check pgsql log backup dir {{ server }}2 if exist
+  stat:
+    path: "{{ shared_drive_pgsql_log_backup_dir }}2"
+  register: register_shared_drive_pgsql_log_backup_dir_2
+  
+- name: Ensure pgsql log backup dir '{{ server }}2' exist
+  file:
+    path: "{{ shared_drive_pgsql_log_backup_dir }}2"
+    state: directory
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+    mode: '0750'
+  when: not register_shared_drive_pgsql_log_backup_dir_2.stat.exists
+
+- name: Copy DB Backup Script
+  template:
+    src: "templates/scripts/db_daily_dump.sh.j2"
+    dest: "{{ script_location }}{{ db_backup_script }}"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750'
+
+- name: Copy Full DB Backup Script
+  template:
+    src: "templates/scripts/db_daily_dump_full.sh.j2"
+    dest: "{{ script_location }}{{ db_backup_full_script }}"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750'
+
+- name: Copy Diff DB Backup Script
+  template:
+    src: "templates/scripts/db_daily_dump_diff.sh.j2"
+    dest: "{{ script_location }}{{ db_backup_diff_script }}"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750'
+
+#- name: Copy DB Reindex Script
+#  template:
+#    src: "templates/scripts/db_pgsql_reindex.sh.j2"
+#    dest: "{{ script_location }}{{ hospital }}_pgsql_reindex.sh"
+#    owner: "{{ code_user}}"
+#    group: "{{ code_user}}"
+#    mode: '0750'
+
+#- name: Copy DB Reindex Table list
+#  template:
+#    src: "templates/scripts/db_pgsql_tables.txt"
+#    dest: "{{ script_location }}{{ hospital }}_pgsql_tables.txt"
+#    owner: "{{ code_user}}"
+#    group: "{{ code_user}}"
+#    mode: '0750' 
+
+- name: Copy DB Replication Check Script
+  template:
+    src: "templates/scripts/db_pg_replication_check.sh.j2"
+    dest: "{{ script_location }}db_pg_replication_check.sh"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750' 
+
+- name: Copy DB Swing Script
+  template:
+    src: "templates/scripts/db_pg_replication_streaming.sh.j2"
+    dest: "{{ script_location }}db_pg_replication_streaming.sh"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750'
+
+- name: Copy Logrotate PGSQL Script
+  template:
+    src: scripts/postrotate_pgsql.sh.j2
+    dest: "{{ script_location }}postrotate_pgsql.sh"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750'
+
+- name: Copy postgresqltuner.pl Script
+  template:
+    src: scripts/postgresqltuner.pl
+    dest: "{{ script_location }}postgresqltuner.pl"
+    owner: "{{ code_user}}"
+    group: "{{ code_user}}"
+    mode: '0750'
