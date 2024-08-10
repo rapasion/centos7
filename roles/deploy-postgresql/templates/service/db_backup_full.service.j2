@@ -1,0 +1,10 @@
+[Unit]
+Description=DB Backup Script
+Wants=db_backup_full_{{ hospital }}.timer
+
+[Service]
+User={{ postgresql_user }}
+ExecStart=/usr/bin/bash -c '{{ script_location }}{{ db_backup_full_script }} > {{ pgsql_logrotate_log }}/{{ db_backup_log }} 2>&1'
+
+[Install]
+WantedBy=multi-user.target

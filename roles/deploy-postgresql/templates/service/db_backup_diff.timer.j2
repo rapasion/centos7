@@ -1,0 +1,9 @@
+[Unit]
+Description=Run Diff DB dump service everyday at 21:30
+
+[Timer]
+Unit=db_backup_diff_{{ hospital }}.service
+OnCalendar=Mon,Tue,Wed,Thu,Fri,Sat *-*-* 21:30:00
+
+[Install]
+WantedBy=timers.target
