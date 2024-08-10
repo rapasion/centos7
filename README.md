@@ -260,4 +260,14 @@ to change any of the variables, add the intended change as an extra var.
 
 The `php_install_from_source` option generates "`ansible/downloads/export_gml_source_php-7.4.9.tar.gz`" file which can be used for other installations.
 
+python ansible-playbook -v initialize_vm.yml --extra-vars "enable_sudo=true download_online_dependencies=true code_user="hmsops" env="dev" hospital="ttsh" cluster="ttsh""
+
+python ansible-playbook -v pcre_curl_install.yml --extra-vars "code_user="hmsops"" --extra-vars="@deployment_vars/shell_global.yml" --tags "install,apache-selinux"
+
+python ansible-playbook -v install_apache.yml --extra-vars="code_user="hmsops"" --tags "install_from_scratch,apache-selinux,apache_user"
+
+python ansible-playbook -v deploy_psql.yml --extra-vars="deploy_from_zip=true install_psql=yes code_user="hmsops" cluster="ttsh" hospital="ttsh"" --tags "pgsql_deploy, apache-selinux"
+
+python ansible-playbook -v install_php.yml --extra-vars="code_user="hmsops" code_environment="dev" cluster="ttsh""  --tags install,config,memcached,startup,apache-selinux
+
 
