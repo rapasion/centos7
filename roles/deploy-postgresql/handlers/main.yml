@@ -1,0 +1,37 @@
+---
+
+- name: start postgresql
+  shell: sh -c "{{ sh_pgsql_start }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+
+- name: stop postgresql
+  shell: sh -c "{{ sh_pgsql_stop }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+
+- name: restart postgresql
+  shell: sh -c "{{ sh_pgsql_restart }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+
+- name: enable postgresql
+  shell: sh -c "{{ sh_pgsql_enable }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+
+- name: disable postgresql
+  shell: sh -c "{{ sh_pgsql_disable }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+
+- name: reload postgresql
+  shell: sh -c "{{ sh_pgsql_reload }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
