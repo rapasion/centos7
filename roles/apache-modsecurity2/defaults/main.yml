@@ -1,0 +1,42 @@
+---
+code_user: gmlops1
+install_crs: false
+installer_dir: '{{ playbook_dir }}/downloads/'
+modsecurity2_source_url: 'https://www.modsecurity.org/tarball/2.9.3/'
+modsecurity2_source_version: 'modsecurity-2.9.3'
+modsecurity2_source_checksum: 'sha256:4192019d169d3f1dd82cc4714db6986df54c6ceb4ee1c8f253de78d1a6b62118'
+yajl_source_url: 'https://github.com/lloyd/yajl/archive/refs/tags/2.1.0.tar.gz'
+yajl_installer_filename: 'yajl-2.1.0.tar.gz'
+yajl_extracted_dir: 'yajl-2.1.0'
+yajl_source_configure_command: >
+ ./configure
+ -p {{ gml_source_path }}
+
+gml_source_path: '/export/home/gml_source'
+#httpd_version_number: '2.4.54'
+gml_source_pcre_version: '8.43'
+gml_source_apache: '{{ gml_source_path }}/apache{{ httpd_version }}'
+gml_source_apache_log: '{{ gml_source_path }}/logs/apache'
+gml_source_apache_conf_path: '{{ gml_source_path }}/conf/apache/httpd.conf'
+gml_source_modsecurity_conf_path: '{{ gml_source_path }}/conf/modsecurity2'
+gml_source_lib: '{{ gml_source_path }}/lib'
+gml_source_modsecurity : '{{ gml_source_path }}/modsecurity2/'
+modsecurity2_source_configure_command: >
+ ./configure
+ --disable-mlogc
+ --prefix={{ gml_source_modsecurity }}
+ --with-apxs={{ gml_source_apache }}/bin/apxs
+ --with-apr={{ gml_source_apache }}/bin
+ --with-apu={{ gml_source_apache }}/bin
+ --with-yajl="{{ gml_source_lib }} {{ gml_source_path }}"
+ --with-pcre="{{ gml_source_path }}/pcre-{{ gml_source_pcre_version }}"
+ LDFLAGS=-L{{ gml_source_lib }}
+gml_source_modsecurity_file: 'gml_source_modsecurity_2_9_3_with_yajl.tar.gz'
+
+coreruleset_url: https://github.com/coreruleset/coreruleset/archive/v
+coreruleset_version: 3.3.2
+coreruleset_checksum: 'sha256:56ddb33a5d0413f43157e1ea22415adf75d8b12219c43156861fd11708c8033e'
+
+yajl_gml_source_file: export_gml_source_yajl_v1.1.tar.gz
+
+compressed_dir: 'downloads'
