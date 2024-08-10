@@ -1,0 +1,63 @@
+- name: Modify httpd.conf to modsec module
+  lineinfile:
+    path: "{{ gml_source_apache_conf_path }}"
+    regexp: '^#LoadModule security2_module modules/mod_security2.so'
+    line: 'LoadModule security2_module modules/mod_security2.so'
+
+- name: Modify httpd.conf to include server tokens
+  lineinfile:
+    path: "{{ gml_source_apache_conf_path }}"
+    regexp: '^#ServerTokens Prod'
+    line: 'ServerTokens Prod'
+
+- name: Modify httpd.conf to include server tokens
+  lineinfile:
+    path: "{{ gml_source_apache_conf_path }}"
+    regexp: '^#SecServerSignature HMS'
+    line: 'SecServerSignature HMS'
+
+- name: Deploy crs-setup.conf
+  template:
+    src: crs-setup.conf
+    dest: "{{ gml_source_modsecurity_conf_path }}/crs/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: Deploy modsecurity.conf
+  template:
+    src: modsecurity.conf.j2
+    dest: "{{ gml_source_modsecurity_conf_path }}/modsecurity.conf"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: Deploy unicode.mapping
+  template:
+    src: unicode.mapping
+    dest: "{{ gml_source_modsecurity_conf_path }}/"
+    owner: "{{ code_user }}"
+    group: "{{ code_user }}"
+
+- name: Modify httpd.conf to include server tokens
+  blockinfile:
+    path: "{{ gml_source_apache_conf_path }}"
+    block: |
+      <IfModule security2_module>
+                Include {{ gml_source_modsecurity_conf_path }}/crs/crs-setup.conf
+                Include {{ gml_source_modsecurity_conf_path }}/crs/rules/*.conf
+                Include {{ gml_source_modsecurity_conf_path }}/*.conf
+      </IfModule>
+  notify: restart webserver
+#  when: 
+#   - install_crs == "true"
+
+#- name: Restart httpd to apply changes
+#  shell: sh -c "{{ sh_httpd_restart }}"
+
+#- name: Change ownership of GML Source to code_user
+#  file:
+#    path: "{{ gml_source_path }}"
+#    state: directory
+#    owner: "{{ code_user }}"
+#    group: "{{ code_user }}"
+#    mode: '0750'
+#    recurse: yes

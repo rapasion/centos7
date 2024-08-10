@@ -1,1 +1,5 @@
-agfd
+
+- name: Compress pgbouncer Installation Directory
+  archive:
+    path: "{{ gml_source_modsecurity }}"
+    dest: "{{ gml_source }}/{{ gml_source_modsecurity_file }}"

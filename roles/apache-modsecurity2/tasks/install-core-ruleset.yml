@@ -1,0 +1,59 @@
+
+- name: Check if Latest OWASP Core Rule Set exists
+  stat:
+    path: "{{ installer_dir }}{{ coreruleset_version }}.tar.gz"
+  register: corerules_file
+
+- name: Download Latest OWASP Core Rule Set
+  get_url:
+    url: "{{ coreruleset_url }}{{ coreruleset_version }}.tar.gz"
+    dest: "{{ installer_dir }}{{ coreruleset_version }}.tar.gz"
+    checksum: "{{ coreruleset_checksum }}"
+  when: not corerules_file.stat.exists
+
+- name: Extract downloaded OWASP CRS tar.gz file
+  unarchive:
+    src: "{{ installer_dir }}{{ coreruleset_version }}.tar.gz"
+    dest: "{{ installer_dir }}"
+    remote_src: yes
+#  when: not corerules_file.stat.exists
+
+#- name: Ensure CRS Directory exists in GML Source
+#  file:
+#    path: "{{ item }}"
+#    state: directory
+#    owner: "{{ code_user }}"
+#    group: "{{ code_user }}"
+#    mode: "0750"
+#  loop:
+#    - "{{ gml_source_modsecurity_conf_path }}"
+#    - "{{ gml_source_modsecurity_conf_path }}/crs/"
+
+#d- name: Copy CRS to GML Source dir
+#  copy:
+#    src: "{{ installer_dir }}coreruleset-{{ coreruleset_version }}/rules"
+#    dest: "{{ gml_source_modsecurity_conf_path }}/crs/"
+#    owner: "{{ code_user }}"
+#    group: "{{ code_user }}"
+#    mode: "0750"
+#    remote_src: yes
+
+#- name: Deploy RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf
+#  template:
+#    src: RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf.j2
+#    dest: "{{ gml_source_modsecurity_conf_path }}/crs/rules/RESPONSE-999-EXCLUSION-RULES-AFTER-CRS.conf"
+#    owner: "{{ code_user }}"
+#    group: "{{ code_user }}"
+#    mode: "0640"
+#  tags:
+#    - 999_exclusion
+
+#- name: Deploy REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf
+#  template:
+#    src: REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf.j2
+#    dest: "{{ gml_source_modsecurity_conf_path }}/crs/rules/REQUEST-900-EXCLUSION-RULES-BEFORE-CRS.conf"
+#    owner: "{{ code_user }}"
+#    group: "{{ code_user }}"
+#    mode: "0640"
+#  tags:
+#    - 900_exclusion

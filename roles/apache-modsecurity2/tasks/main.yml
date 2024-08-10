@@ -1,0 +1,69 @@
+---
+
+# - name: Check if YAJL is already installed
+#   stat:
+#     path: "{{ gml_source_path }}/lib/libyajl.so"
+#   register: yajl_installed 
+
+# - include_tasks: install-yajl.yml
+#   when:
+#    - not yajl_installed.stat.exists
+    
+# - name: Check if Modsecurity2 is already installed
+#   command: cat {{ gml_source_apache_conf_path }}
+#   register: modsec2_installed 
+
+# Install Modsecurity-Apache
+# - include_tasks: modsecurity2-apache.yml
+#   when: 
+#    - modsec2_installed.stdout.find('#LoadModule security2_module modules/mod_security2.so') != 1
+
+# Install YAJL
+- import_tasks: install-yajl.yml
+  tags:
+    - install_from_source
+    - never
+
+
+# Install Modsecurity-Apache
+- import_tasks: modsecurity2-apache.yml
+  tags:
+    - install_from_source
+    - never
+
+# Install OWASP Core Rule Set
+- import_tasks: install-core-ruleset.yml
+  tags:
+    - install
+    - ruleset
+    - never
+
+# Modify HTTPD Config file
+- import_tasks: modify-httpd-conf.yml
+  tags:
+    - install
+    - modsecurity
+    - never
+
+# Install YAJL
+# - include_tasks: install-yajl.yml
+#   when:
+#   - not yajl_installed.stat.exists
+
+# Compress ModSecurity Directory
+# - include_tasks: compress-modsecurity.yml
+
+# Install OWASP Core Rule Set
+# - include_tasks: install-core-ruleset.yml
+#   tags:
+#    - install
+#    - ruleset
+#    - never
+
+# Modify HTTPD Config file
+# - include_tasks: modify-httpd-conf.yml
+#   tags:
+#    - install
+#    - modify
+#    - never
+

@@ -1,0 +1,80 @@
+---
+
+- name: Check ModSec libxml2-devel dependencies
+  shell: sh -c "rpm -qa | grep libxml2-devel"
+  register: register_libxml2_devel
+  failed_when: false
+
+- name: Check ModSec expat-devel dependencies
+  shell: sh -c "rpm -qa | grep libxml2-devel"
+  register: register_expat_devel
+  failed_when: false
+
+- name: Install libxml2-devel dependencies
+  become: yes
+  become_method: sudo
+  become_user: root
+  yum:
+    name: "{{ playbook_dir }}/downloads/expat-devel-2.1.0-12.el7.x86_64.rpm"
+    state: present
+  when:
+    - register_libxml2_devel.rc == 1
+  tags:
+    - install_from_source
+    - never
+
+- name: Install expat-devel dependencies
+  become: yes
+  become_method: sudo
+  become_user: root
+  yum:
+    name: "{{ playbook_dir }}/downloads/expat-devel-2.1.0-12.el7.x86_64.rpm"
+    state: present
+  when:
+    - register_expat_devel.rc == 1
+  tags:
+    - install_from_source
+    - never
+
+- name: Check if MODSEC2 installer exists
+  stat:
+    path: "{{ installer_dir }}{{ modsecurity2_source_version }}.tar.gz"
+  register: modsec2_file
+
+- name: Download latest stable version of MODSEC2
+  get_url:
+    url: "{{ modsecurity2_source_url }}{{ modsecurity2_source_version }}.tar.gz"
+    dest: "{{ installer_dir }}"
+    checksum: "{{ modsecurity2_source_checksum }}"
+  when: not modsec2_file.stat.exists
+
+- name: Extract downloaded MODSEC2 tar.gz file
+  unarchive:
+    src: "{{ installer_dir }}{{ modsecurity2_source_version }}.tar.gz"
+    dest: "{{ installer_dir }}"
+    remote_src: yes
+
+- name: Run configure script.
+  command: >
+    {{ modsecurity2_source_configure_command }}
+    chdir={{ installer_dir }}/{{ modsecurity2_source_version }}
+
+- name: Make and install MODSEC2.
+  command: >
+    {{ item }}
+    chdir={{ installer_dir }}/{{ modsecurity2_source_version }}
+  with_items:
+    - make
+    - make install
+  become: yes
+  become_method: sudo
+  become_user: root
+
+#- name: Change GML Source Ownership
+#  file:
+#    path: "{{ gml_source_path }}"
+#    state: directory
+#    owner: "{{ code_user }}"
+#    group: "{{ code_user }}"
+#    recurse: yes
+#    mode: "0750"

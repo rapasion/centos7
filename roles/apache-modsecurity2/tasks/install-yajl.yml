@@ -1,0 +1,64 @@
+---
+
+- name: Check if YAJL installer exists
+  stat:
+    path: "{{ installer_dir }}{{ yajl_installer_filename }}"
+  register: yajl_file
+
+- name: Download latest stable version of YAJL
+  get_url:
+    url: "{{ yajl_source_url }}"
+    dest: "{{ installer_dir }}"
+  when: not yajl_file.stat.exists
+
+- name: Install RPM dependencies
+  become: yes
+  become_method: sudo
+  become_user: root
+  yum:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "{{ playbook_dir }}/downloads/cmake-2.8.12.2-2.el7.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/kernel-headers-3.10.0-1160.24.1.el7.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/glibc-headers-2.17-323.el7_9.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/mpfr-3.1.1-4.el7.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/libmpc-1.0.1-3.el7.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/glibc-devel-2.17-323.el7_9.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/cpp-4.8.5-44.el7.x86_64.rpm"
+    - "{{ playbook_dir }}/downloads/gcc-4.8.5-44.el7.x86_64.rpm"
+    
+- name: Extract downloaded YAJL tar.gz file
+  unarchive:
+    src: "{{ installer_dir }}{{ yajl_installer_filename }}"
+    dest: "{{ installer_dir }}"
+    remote_src: yes
+
+- name: Run configure script.
+  command: >
+    {{ yajl_source_configure_command }}
+    chdir={{ installer_dir }}/{{ yajl_extracted_dir }}
+
+- name: Make and install YAJL.
+  command: >
+    {{ item }}
+    chdir={{ installer_dir }}/{{ yajl_extracted_dir }}
+  with_items:
+    - make
+    - make install
+
+- name: Check if compressed file exists.
+  file:
+    state: directory
+    path: "{{ playbook_dir }}/{{ compressed_dir }}"
+
+- name: Compress YAJL Installation Directory
+  archive:
+    path: "{{ gml_source_path }}/lib/libyajl*"
+    dest: "{{ playbook_dir }}/{{ compressed_dir }}/{{ yajl_gml_source_file }}"
+
+- name: Refresh Libraries
+  shell: sh -c "{{ item }}"
+  with_items:
+    - "sudo ldconfig"
+
