@@ -1,0 +1,16 @@
+---
+- name: restart webserver
+
+  shell: sh -c "{{ sh_httpd_restart }}"
+  become: yes
+  become_user: "{{ code_user }}"
+  become_method: sudo
+#  service:
+#    name: httpd
+#    enabled: yes
+#    state: started
+
+#- name: restore-selinux-install-context
+#  shell: "sudo restorecon -Rv {{gml_source_path}}"
+#  tags:
+#    - apache-selinux
