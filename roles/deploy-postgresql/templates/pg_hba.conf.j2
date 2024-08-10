@@ -1,0 +1,56 @@
+{{ ansible_managed | comment }}
+# PostgreSQL Client Authentication Configuration File
+# ===================================================
+#
+# See: https://www.postgresql.org/docs/current/static/auth-pg-hba-conf.html
+
+# TYPE  DATABASE        USER            ADDRESS                 METHOD
+
+# "local" is for Unix domain socket connections only
+local   all             all                                     peer
+
+# IPv4 local connections:
+#hostssl all             all             127.0.0.1/32            scram-sha-256
+hostssl all             all             127.0.0.1/32            scram-sha-256
+
+{% if code_environment == "dev" %}
+{% for client in server_to_connect %}
+hostssl all             all             {{ client.ip }}/24       scram-sha-256
+{% endfor %}
+{% endif %}
+{% if code_environment == 'prod' or code_environment == 'dr' or code_environment == 'uat' %}
+{% for client in server_to_connect %}
+hostssl all             all             {{ client.ip }}/32       scram-sha-256
+{% endfor %}
+{% endif %}
+{% if server is defined and server == 'hl7' %}
+{% for client in hl7_server_to_connect %}
+hostssl all             all             {{ client.ip }}/32       scram-sha-256
+{% endfor %}
+{% endif %}
+{% for client in pgsql_hba_entry %}
+hostssl all             all             {{ client.ip }}/32       scram-sha-256
+{% endfor %}
+
+hostssl all             all             0.0.0.0/0               reject
+
+# IPv6 local connections:
+{% if code_environment == 'prod' or code_environment == 'dr' or code_environment == 'uat' %}
+hostssl all             all             ::1/128                 ldap ldapserver=nhg.local ldapbasedn="cn=Users,dc=nhg,dc=local" ldapbinddn="{{ pgsql_hdc_binddn_user }}" ldapbindpasswd="{{ pgsql_hdc_binddn_pwd }}" ldapsearchattribute="Users"
+{% endif %}
+{% if code_environment == 'dev' or code_environment == 'sit' %}
+hostssl all             all             ::1/128                 ldap ldapserver=172.17.104.253 ldapbasedn="cn=Users,dc=gmldomain,dc=local" ldapbinddn="CN={{ pgsql_gml_binddn_user }},CN=Users,dc=gmldomain,dc=local" ldapbindpasswd="{{ pgsql_gml_binddn_pwd }}" ldapsearchattribute="sAMAccountName"
+{% endif %}
+
+# Allow replication connections from localhost, by a user with the
+# replication privilege.
+local   replication     all                                     scram-sha-256
+{% if code_environment == 'prod' or code_environment == 'dr'%}
+hostssl replication     all             {{ db_set_a }}/32       scram-sha-256
+hostssl replication     all             {{ db_set_b }}/32       scram-sha-256
+{% if db_set_dr is defined %}
+hostssl replication     all             {{ db_set_dr }}/32       scram-sha-256
+{% endif %}
+{% endif %}
+host    replication     all             127.0.0.1/32            scram-sha-256
+host    replication     all             ::1/128                 scram-sha-256

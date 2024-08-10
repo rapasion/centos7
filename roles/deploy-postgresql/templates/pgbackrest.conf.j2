@@ -1,0 +1,44 @@
+{% if server == 'db' %}
+[{{ db_name }}]
+{% endif %}
+{% if server == 'hl7' %}
+[{{ db_hl7_name }}]
+{% endif %}
+pg1-path={{ postgresql_data }}
+{% if server == 'db' %}
+pg1-port={{ pgsql_port }}
+{% endif %}
+{% if server == 'hl7' %}
+pg1-port={{ hl7_pgsql_port }}
+{% endif %}
+pg1-user={{ postgresql_user }}
+
+{% if pg_backrest_recovery_option is defined and pg_backrest_recovery_option == 'true' %}
+{% if db_set_a is defined and ansible_default_ipv4.address == db_set_a %}
+recovery-option=primary_conninfo=host={{ db_set_b }} user={{ pgsql_rep_usr }}
+{% elif db_set_b is defined and ansible_default_ipv4.address == db_set_b %}
+recovery-option=primary_conninfo=host={{ db_set_a }} user={{ pgsql_rep_usr }}
+{% else %}
+#recovery-option=primary_conninfo=host=<MASTER IP> user={{ pgsql_rep_usr }}
+{% endif %}
+{% endif %}
+
+[global]
+repo1-path={{ pgbackrest_repo }}
+repo1-retention-diff=7
+repo1-retention-full=2
+log-level-console=info
+log-level-file=info
+start-fast=y
+{% if server == 'db' %}
+process-max=4
+{% endif %}
+{% if server == 'hl7' %}
+process-max=2
+{% endif %}
+
+[global:archive-push]
+compress-level=3
+archive-async=y
+archive-push-queue-max=20GB
+spool-path={{ pgbackrest_spool_dir }}
