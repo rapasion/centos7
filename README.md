@@ -270,4 +270,6 @@ python ansible-playbook -v deploy_psql.yml --extra-vars="deploy_from_zip=true in
 
 python ansible-playbook -v install_php.yml --extra-vars="code_user="hmsops" code_environment="dev" cluster="ttsh""  --tags install,config,memcached,startup,apache-selinux
 
-
+## to install ansible
+sudo yum install epel-release
+sudo yum install ansible
